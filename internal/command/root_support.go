@@ -79,15 +79,7 @@ func writeServiceResponse(runCtx *runContext, resp client.Response, err error) e
 	if runCtx.verbose {
 		renderer.Diagnostic("[apimux] HTTP %d", resp.StatusCode)
 	}
-	if err := renderer.WriteCapabilityResponse(resp.Body, runCtx.mode, runCtx.debug, runCtx.format); err != nil {
-		var unsupported *output.UnsupportedProjectionError
-		if errors.As(err, &unsupported) {
-			return &cliError{
-				exitCode: 2,
-				code:     "cli_invalid_format",
-				message:  err.Error(),
-			}
-		}
+	if err := renderer.WriteCapabilityResponse(resp.Body, runCtx.output, runCtx.debug); err != nil {
 		var invalid *output.InvalidProjectionError
 		if errors.As(err, &invalid) {
 			return &cliError{
@@ -156,21 +148,9 @@ func splitCSV(value string) []string {
 	return out
 }
 
-func parseOutputMode(value string) (output.Mode, bool) {
-	switch strings.TrimSpace(value) {
-	case "", string(output.ModeJSON):
-		return output.ModeJSON, true
-	case string(output.ModePretty):
-		return output.ModePretty, true
-	default:
-		return "", false
-	}
-}
-
 func applyPersistentArgs(runCtx *runContext, args []string) error {
 	baseURL := runCtx.cfg.BaseURL
-	outputMode := string(output.ModeJSON)
-	projectionFormat := string(output.FormatAuto)
+	bodyOutput := string(output.BodyOutputCompact)
 	verbose := false
 	debug := false
 
@@ -190,17 +170,9 @@ func applyPersistentArgs(runCtx *runContext, args []string) error {
 				return &cliError{exitCode: 2, code: "cli_invalid_flags", message: "flag needs an argument: --output"}
 			}
 			idx++
-			outputMode = strings.TrimSpace(args[idx])
+			bodyOutput = strings.TrimSpace(args[idx])
 		case strings.HasPrefix(arg, "--output="):
-			outputMode = strings.TrimSpace(strings.TrimPrefix(arg, "--output="))
-		case arg == "--format":
-			if idx+1 >= len(args) {
-				return &cliError{exitCode: 2, code: "cli_invalid_flags", message: "flag needs an argument: --format"}
-			}
-			idx++
-			projectionFormat = strings.TrimSpace(args[idx])
-		case strings.HasPrefix(arg, "--format="):
-			projectionFormat = strings.TrimSpace(strings.TrimPrefix(arg, "--format="))
+			bodyOutput = strings.TrimSpace(strings.TrimPrefix(arg, "--output="))
 		case arg == "--verbose":
 			verbose = true
 		case arg == "--debug":
@@ -211,27 +183,18 @@ func applyPersistentArgs(runCtx *runContext, args []string) error {
 	if strings.TrimSpace(baseURL) == "" {
 		baseURL = "http://127.0.0.1:8081"
 	}
-	mode, ok := parseOutputMode(outputMode)
+	parsedOutput, ok := output.ParseBodyOutput(bodyOutput)
 	if !ok {
 		return &cliError{
 			exitCode: 2,
-			code:     "cli_invalid_output_mode",
-			message:  "output must be one of: json, pretty",
+			code:     "cli_invalid_output",
+			message:  "output must be one of: compact, pretty, data, data-pretty",
 		}
 	}
 
 	runCtx.verbose = verbose
 	runCtx.debug = debug
-	runCtx.mode = mode
-	format, ok := output.ParseFormat(projectionFormat)
-	if !ok {
-		return &cliError{
-			exitCode: 2,
-			code:     "cli_invalid_format",
-			message:  "format must be one of: data, compact",
-		}
-	}
-	runCtx.format = format
+	runCtx.output = parsedOutput
 	runCtx.cfg.BaseURL = baseURL
 	runCtx.client = client.New(client.Config{
 		BaseURL: baseURL,

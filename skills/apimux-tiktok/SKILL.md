@@ -1,5 +1,5 @@
 ---
-name: tiktok
+name: apimux-tiktok
 version: 1.0.0
 description: "TikTok 内容与 TikTok Shop 数据查询。提供视频搜索、评论分析、店铺商品列表、商品详情等能力。适用于内容研究、达人分析、带货选品、跨平台市场验证等场景。"
 metadata:
@@ -21,7 +21,7 @@ TikTok 数据查询，覆盖内容侧和 TikTok Shop 两条分析路径。
 - 想分析某个视频下的用户反馈 → `list_comments`
 - 想看某个 TikTok Shop 卖家的带货商品 → `shop_products`
 - 想看某个商品的详细信息 → `shop_product_info`
-- 想做跨平台市场验证 → 先 `search_videos` 看内容热度，再转到 [`amazon.search_products`](../amazon/SKILL.md) 看供给侧
+- 想做跨平台市场验证 → 先 `search_videos` 看内容热度，再转到 [`amazon.search_products`](../apimux-amazon/SKILL.md) 看供给侧
 
 ## Capabilities 概览
 

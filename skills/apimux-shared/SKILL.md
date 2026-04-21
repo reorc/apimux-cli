@@ -40,7 +40,7 @@ APIMux **service contract** 仍然使用 canonical envelope：
 - `meta` 始终存在，无论成功或失败
 
 **CLI 默认规则（agent-friendly）**：
-- `apimux <source> <capability>` 默认只输出 `data`
+- `apimux <source> <capability>` 默认输出 compact agent-facing body
 - 错误时默认只输出 `{"error": ...}`
 - 默认输出不包含 `meta`
 - 需要排查问题或查看分页/partial 元信息时，使用 `--debug` 输出完整 envelope
@@ -107,11 +107,14 @@ Service 侧错误响应结构：
 ## CLI 通用用法
 
 ```bash
-# 默认输出 data-only JSON
+# 默认输出 compact body
 apimux amazon get_product --asin "B0CM5JV26D" --market "US"
 
-# data-only pretty 模式（人类可读）
+# compact pretty 模式（人类可读）
 apimux --output pretty amazon get_product --asin "B0CM5JV26D" --market "US"
+
+# raw data 模式（跳过 compact projection）
+apimux --output data amazon get_product --asin "B0CM5JV26D" --market "US"
 
 # debug 模式：完整 envelope（已去掉 provider source）
 apimux --debug amazon get_product --asin "B0CM5JV26D" --market "US"
@@ -124,7 +127,8 @@ apimux schema show amazon.get_product
 ```
 
 **CLI 规则**：
-- 默认输出 JSON，Agent 应优先消费 data-only 输出
-- `--output pretty` 只控制 JSON 排版，不改变输出 shape
+- 默认输出 compact body，Agent 应优先消费该输出
+- `--output pretty` = compact body + pretty JSON
+- `--output data` / `data-pretty` 会跳过 compact projection
 - 只有 `--debug` 才会输出完整 envelope
 - 所有 CLI 命令遵循 `apimux <source> <capability> [flags]` 格式

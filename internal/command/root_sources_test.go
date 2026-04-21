@@ -121,7 +121,6 @@ func TestAmazonGetProductCompactProjection(t *testing.T) {
 	root := NewRoot(&stdout, &stderr)
 	exitCode, err := root.Execute(context.Background(), []string{
 		"--base-url", server.URL,
-		"--format", "compact",
 		"amazon", "get_product",
 		"--asin", "B0CM5JV26D",
 		"--market", "US",
@@ -140,7 +139,7 @@ func TestAmazonGetProductCompactProjection(t *testing.T) {
 	}
 }
 
-func TestGoogleTrendsColumnarAliasUsesCompactProjection(t *testing.T) {
+func TestGoogleTrendsOutputPrettyUsesCompactProjection(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if maybeServeSchema(w, r) {
 			return
@@ -158,7 +157,7 @@ func TestGoogleTrendsColumnarAliasUsesCompactProjection(t *testing.T) {
 	root := NewRoot(&stdout, &stderr)
 	exitCode, err := root.Execute(context.Background(), []string{
 		"--base-url", server.URL,
-		"--format", "columnar",
+		"--output", "pretty",
 		"google_trends", "get_interest_over_time",
 		"--q", "AI",
 		"--geo", "US",
@@ -169,12 +168,15 @@ func TestGoogleTrendsColumnarAliasUsesCompactProjection(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), `"columns":["date","timestamp","value"]`) {
-		t.Fatalf("expected compact table output via columnar alias, got %s", stdout.String())
+	if !strings.Contains(stdout.String(), `"columns": [`) || !strings.Contains(stdout.String(), `"value"`) {
+		t.Fatalf("expected pretty compact table output, got %s", stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "\n  \"timeline\"") {
+		t.Fatalf("expected pretty output indentation, got %s", stdout.String())
 	}
 }
 
-func TestColumnarAliasIsAcceptedForExpandKeywords(t *testing.T) {
+func TestAmazonExpandKeywordsOutputCompact(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if maybeServeSchema(w, r) {
 			return
@@ -192,7 +194,7 @@ func TestColumnarAliasIsAcceptedForExpandKeywords(t *testing.T) {
 	root := NewRoot(&stdout, &stderr)
 	exitCode, err := root.Execute(context.Background(), []string{
 		"--base-url", server.URL,
-		"--format", "compact",
+		"--output", "compact",
 		"amazon", "expand_keywords",
 		"--keyword", "desk lamp",
 	})
@@ -203,7 +205,7 @@ func TestColumnarAliasIsAcceptedForExpandKeywords(t *testing.T) {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
 	if !strings.Contains(stdout.String(), `"columns":["keyword","est_searches_num","searches_rank","match_types"]`) {
-		t.Fatalf("expected compact table output via columnar alias, got %s", stdout.String())
+		t.Fatalf("expected compact table output, got %s", stdout.String())
 	}
 }
 
@@ -257,7 +259,7 @@ func TestAmazonGetProductFormatDataExplicitlyDisablesDefaultCompact(t *testing.T
 	root := NewRoot(&stdout, &stderr)
 	exitCode, err := root.Execute(context.Background(), []string{
 		"--base-url", server.URL,
-		"--format", "data",
+		"--output", "data",
 		"amazon", "get_product",
 		"--asin", "B0CM5JV26D",
 		"--market", "US",
@@ -273,6 +275,43 @@ func TestAmazonGetProductFormatDataExplicitlyDisablesDefaultCompact(t *testing.T
 	}
 	if strings.Contains(stdout.String(), `"image_count"`) || strings.Contains(stdout.String(), `"variant_count"`) {
 		t.Fatalf("expected compact projection to be disabled, got %s", stdout.String())
+	}
+}
+
+func TestAmazonGetProductOutputDataPrettyPrettyPrintsRawData(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if maybeServeSchema(w, r) {
+			return
+		}
+		if r.URL.Path != "/v1/capabilities/amazon.get_product" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"asin":"B0CM5JV26D","market":"US","images":[{"link":"a"}]},"meta":{"capability":"amazon.get_product"}}`))
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"--output", "data-pretty",
+		"amazon", "get_product",
+		"--asin", "B0CM5JV26D",
+		"--market", "US",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "\n  \"asin\": \"B0CM5JV26D\"") {
+		t.Fatalf("expected pretty raw data output, got %s", stdout.String())
+	}
+	if strings.Contains(stdout.String(), `"image_count"`) {
+		t.Fatalf("expected raw data output, got %s", stdout.String())
 	}
 }
 

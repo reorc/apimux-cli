@@ -1,0 +1,60 @@
+version: 2
+
+project_name: apimux
+dist: dist/releases
+
+env:
+  - CGO_ENABLED=0
+
+before:
+  hooks:
+    - ./scripts/write-release-manifest.sh {{ .Version }} .goreleaser-artifacts
+
+builds:
+  - id: apimux
+    binary: apimux
+    main: ./cmd/apimux
+    flags:
+      - -trimpath
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - >-
+        -s -w
+        -X github.com/reorc/apimux-cli/internal/buildinfo.Version={{ .Version }}
+        -X github.com/reorc/apimux-cli/internal/buildinfo.Commit={{ .ShortCommit }}
+        -X github.com/reorc/apimux-cli/internal/buildinfo.BuildDate={{ .CommitDate }}
+        -X github.com/reorc/apimux-cli/internal/buildinfo.ReleaseManifestURL=https://github.com/reorc/apimux-cli/releases/latest/download/latest.json
+
+archives:
+  - id: apimux
+    ids:
+      - apimux
+    formats:
+      - tar.gz
+    name_template: "apimux_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files: []
+
+checksum:
+  name_template: "apimux_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+release:
+  github:
+    owner: reorc
+    name: apimux-cli
+  name_template: "apimux-cli {{ .Version }}"
+  make_latest: true
+  extra_files:
+    - glob: ./scripts/install.sh
+      name_template: install.sh
+    - glob: ./.goreleaser-artifacts/latest.json
+      name_template: latest.json
+
+changelog:
+  disable: true

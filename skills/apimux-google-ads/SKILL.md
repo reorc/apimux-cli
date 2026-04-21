@@ -1,5 +1,5 @@
 ---
-name: google_ads
+name: apimux-google-ads
 version: 1.0.0
 description: "Google Ads Transparency Center 查询。提供广告主搜索、广告素材列表、广告详情能力，适用于广告样本检索、竞品创意分析、素材下钻等场景。"
 metadata:

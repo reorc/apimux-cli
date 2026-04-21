@@ -1,5 +1,5 @@
 ---
-name: douyin
+name: apimux-douyin
 version: 1.0.0
 description: "抖音视频搜索与评论查询。提供视频搜索、详情和评论能力，适用于内容研究、热视频巡检、评论抽样等场景。"
 metadata:

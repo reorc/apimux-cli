@@ -379,11 +379,11 @@ func stripPersistentArgs(args []string) []string {
 	for idx := 0; idx < len(args); idx++ {
 		arg := strings.TrimSpace(args[idx])
 		switch {
-		case arg == "--base-url", arg == "--output", arg == "--format":
+		case arg == "--base-url", arg == "--output":
 			if idx+1 < len(args) {
 				idx++
 			}
-		case strings.HasPrefix(arg, "--base-url="), strings.HasPrefix(arg, "--output="), strings.HasPrefix(arg, "--format="):
+		case strings.HasPrefix(arg, "--base-url="), strings.HasPrefix(arg, "--output="):
 			continue
 		case arg == "--verbose", arg == "--debug":
 			continue

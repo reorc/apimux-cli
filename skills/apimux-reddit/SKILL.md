@@ -1,5 +1,5 @@
 ---
-name: reddit
+name: apimux-reddit
 version: 1.0.0
 description: "Reddit 内容查询。提供搜索、subreddit feed、帖子详情和评论能力，适用于话题研究、社区巡检、帖子下钻分析等场景。"
 metadata:

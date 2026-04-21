@@ -51,17 +51,16 @@ apimux google_trends get_interest_over_time --q "AI" --geo US
 Useful flags:
 
 - `--debug`: print the sanitized response envelope
-- `--output pretty`: pretty-print JSON
-- `--format compact`: use the default compact projection layer
-- `--format data`: return raw `data` only
-
-`--format columnar` remains accepted as a deprecated alias for `compact`.
+- `--output compact`: default compact agent-facing body
+- `--output pretty`: compact body with indented JSON
+- `--output data`: raw `data` payload without projection
+- `--output data-pretty`: raw `data` payload with indented JSON
 
 ## Repo Layout
 
 - `cmd/apimux`: entrypoint
 - `internal/`: CLI internals, projection layer, config, update checks
-- `skills/`: paired capability docs for agent usage
+- `skills/apimux-*`: paired capability docs for agent usage
 - `scripts/build-apimux-cli.sh`: release artifact builder
 - `scripts/install.sh`: binary installer
 - `docs/`: install, release, and development notes
@@ -81,7 +80,7 @@ Run tests:
 make test
 ```
 
-Build release archives and checksums:
+Build snapshot release archives and checksums:
 
 ```bash
 make release-build
@@ -91,4 +90,4 @@ Version metadata is injected via git tags and commit info. The intended first pu
 
 ## Skills
 
-The `skills/` directory ships alongside the CLI because both surfaces are versioned together. If you update a capability contract, update the corresponding skill doc in the same change.
+The `skills/apimux-*` directories ship alongside the CLI because both surfaces are versioned together. If you update a capability contract, update the corresponding skill doc in the same change.

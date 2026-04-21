@@ -1,7 +1,7 @@
 dist/
+.goreleaser-artifacts/
 .DS_Store
 *.log
 .env
 .env.*
 coverage.out
-

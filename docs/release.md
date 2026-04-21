@@ -13,4 +13,14 @@ Release contract:
 - assets remain stable at `releases/download/<tag>/apimux_<tag>_<os>_<arch>.tar.gz`
 - checksums remain stable at `releases/download/<tag>/apimux_<tag>_checksums.txt`
 
-Current publishing mode is manual dual-push plus manual release asset upload. CI can replace the mechanics later without changing the public URL contract.
+Release automation:
+
+- CI build runs on pull requests and pushes to `main`
+- GitHub release runs on tag push matching `v*`
+- GoReleaser builds darwin/linux × amd64/arm64 archives
+- GoReleaser uploads archives, checksums, `install.sh`, and `latest.json` to GitHub Releases
+
+Manual dual-push remains the repo sync model:
+
+- GitHub is the public source of truth
+- GitLab remains the internal mirror

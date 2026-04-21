@@ -10,10 +10,9 @@ import (
 type Format string
 
 const (
-	FormatAuto     Format = "auto"
-	FormatData     Format = "data"
-	FormatCompact  Format = "compact"
-	FormatColumnar Format = "columnar"
+	FormatAuto    Format = "auto"
+	FormatData    Format = "data"
+	FormatCompact Format = "compact"
 )
 
 type UnsupportedProjectionError struct {
@@ -640,7 +639,7 @@ func ParseFormat(value string) (Format, bool) {
 		return FormatAuto, true
 	case string(FormatData):
 		return FormatData, true
-	case string(FormatColumnar), string(FormatCompact):
+	case string(FormatCompact):
 		return FormatCompact, true
 	default:
 		return "", false

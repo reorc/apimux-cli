@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestInvalidOutputModeReturnsNonZero(t *testing.T) {
+func TestInvalidOutputReturnsNonZero(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
@@ -24,12 +24,12 @@ func TestInvalidOutputModeReturnsNonZero(t *testing.T) {
 	if exitCode == 0 {
 		t.Fatalf("expected non-zero exit code")
 	}
-	if !strings.Contains(stdout.String(), `"cli_invalid_output_mode"`) {
+	if !strings.Contains(stdout.String(), `"cli_invalid_output"`) {
 		t.Fatalf("expected canonical local error, got %s", stdout.String())
 	}
 }
 
-func TestInvalidFormatReturnsNonZero(t *testing.T) {
+func TestUnknownFormatFlagReturnsNonZero(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
@@ -44,7 +44,7 @@ func TestInvalidFormatReturnsNonZero(t *testing.T) {
 	if exitCode == 0 {
 		t.Fatalf("expected non-zero exit code")
 	}
-	if !strings.Contains(stdout.String(), `"cli_invalid_format"`) {
+	if !strings.Contains(stdout.String(), `"cli_invalid_flags"`) {
 		t.Fatalf("expected canonical local error, got %s", stdout.String())
 	}
 }

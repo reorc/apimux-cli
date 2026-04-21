@@ -1,5 +1,5 @@
 ---
-name: meta_ads
+name: apimux-meta-ads
 version: 1.0.0
 description: "Meta Ads Library 查询。提供广告搜索与广告详情能力，适用于广告创意研究、竞品分析、投放样本采集等场景。"
 metadata:

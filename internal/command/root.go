@@ -30,8 +30,7 @@ type runContext struct {
 	stderr   io.Writer
 	verbose  bool
 	debug    bool
-	mode     output.Mode
-	format   output.Format
+	output   output.BodyOutput
 	cfg      config.Config
 	client   *client.Client
 	exitCode int
@@ -106,16 +105,12 @@ func (r *Root) Execute(ctx context.Context, args []string) (int, error) {
 
 func (r *Root) newCommand(runCtx *runContext) *cobra.Command {
 	baseURL := runCtx.cfg.BaseURL
-	outputMode := string(runCtx.mode)
+	outputMode := string(runCtx.output)
 	if outputMode == "" {
-		outputMode = string(output.ModeJSON)
+		outputMode = string(output.BodyOutputCompact)
 	}
 	verbose := runCtx.verbose
 	debug := runCtx.debug
-	format := string(runCtx.format)
-	if format == "" {
-		format = string(output.FormatAuto)
-	}
 
 	rootCmd := &cobra.Command{
 		Use:           "apimux",
@@ -131,27 +126,18 @@ func (r *Root) newCommand(runCtx *runContext) *cobra.Command {
 				cfg.BaseURL = "http://127.0.0.1:8081"
 			}
 
-			mode, ok := parseOutputMode(outputMode)
+			bodyOutput, ok := output.ParseBodyOutput(outputMode)
 			if !ok {
 				return &cliError{
 					exitCode: 2,
-					code:     "cli_invalid_output_mode",
-					message:  "output must be one of: json, pretty",
+					code:     "cli_invalid_output",
+					message:  "output must be one of: compact, pretty, data, data-pretty",
 				}
 			}
 
 			runCtx.verbose = runCtx.verbose || verbose
 			runCtx.debug = runCtx.debug || debug
-			runCtx.mode = mode
-			if parsed, ok := output.ParseFormat(format); ok {
-				runCtx.format = parsed
-			} else {
-				return &cliError{
-					exitCode: 2,
-					code:     "cli_invalid_format",
-					message:  "format must be one of: data, compact",
-				}
-			}
+			runCtx.output = bodyOutput
 			runCtx.cfg = cfg
 			runCtx.client = client.New(client.Config{
 				BaseURL: cfg.BaseURL,
@@ -165,8 +151,7 @@ func (r *Root) newCommand(runCtx *runContext) *cobra.Command {
 	}
 
 	rootCmd.PersistentFlags().StringVar(&baseURL, "base-url", runCtx.cfg.BaseURL, "APIMux service base URL")
-	rootCmd.PersistentFlags().StringVar(&outputMode, "output", outputMode, "Output mode: json or pretty")
-	rootCmd.PersistentFlags().StringVar(&format, "format", format, "Projection format: data or compact (default: auto; columnar is accepted as a compact alias)")
+	rootCmd.PersistentFlags().StringVar(&outputMode, "output", outputMode, "Agent-facing body output: compact, pretty, data, or data-pretty")
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", verbose, "Write request diagnostics to stderr")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", debug, "Emit full response envelope for debugging")
 	rootCmd.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {

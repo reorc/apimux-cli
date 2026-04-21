@@ -10,7 +10,7 @@ func TestWriteCapabilityResponseJSONModeWritesDataOnlyWithNewline(t *testing.T) 
 	var stdout bytes.Buffer
 	renderer := Renderer{Stdout: &stdout}
 
-	if err := renderer.WriteCapabilityResponse([]byte(`{"ok":true,"data":{"asin":"B001","title":"Desk Lamp","brand_store":{"text":"Acme"},"buybox":{"availability":"In Stock"},"images":[{"link":"a"},{"link":"b"}],"variants":[{"asin":"A"},{"asin":"B"}],"feature_bullets":["one","two","three","four"]},"meta":{"capability":"amazon.get_product","source":"upstream"}}`), ModeJSON, false, FormatAuto); err != nil {
+	if err := renderer.WriteCapabilityResponse([]byte(`{"ok":true,"data":{"asin":"B001","title":"Desk Lamp","brand_store":{"text":"Acme"},"buybox":{"availability":"In Stock"},"images":[{"link":"a"},{"link":"b"}],"variants":[{"asin":"A"},{"asin":"B"}],"feature_bullets":["one","two","three","four"]},"meta":{"capability":"amazon.get_product","source":"upstream"}}`), BodyOutputCompact, false); err != nil {
 		t.Fatalf("WriteCapabilityResponse() error = %v", err)
 	}
 
@@ -24,7 +24,7 @@ func TestWriteCapabilityResponsePrettyModeIndentsDataOnly(t *testing.T) {
 	var stdout bytes.Buffer
 	renderer := Renderer{Stdout: &stdout}
 
-	if err := renderer.WriteCapabilityResponse([]byte(`{"ok":true,"data":{"id":"1","nested":{"ok":true}},"meta":{"capability":"amazon.get_product"}}`), ModePretty, false, FormatData); err != nil {
+	if err := renderer.WriteCapabilityResponse([]byte(`{"ok":true,"data":{"id":"1","nested":{"ok":true}},"meta":{"capability":"amazon.get_product"}}`), BodyOutputDataPretty, false); err != nil {
 		t.Fatalf("WriteCapabilityResponse() error = %v", err)
 	}
 
@@ -38,7 +38,7 @@ func TestWriteCapabilityResponseAutoFallsBackToDataWhenProjectionUnsupported(t *
 	var stdout bytes.Buffer
 	renderer := Renderer{Stdout: &stdout}
 
-	if err := renderer.WriteCapabilityResponse([]byte(`{"ok":true,"data":{"id":"1","nested":{"ok":true}},"meta":{"capability":"unsupported.capability"}}`), ModeJSON, false, FormatAuto); err != nil {
+	if err := renderer.WriteCapabilityResponse([]byte(`{"ok":true,"data":{"id":"1","nested":{"ok":true}},"meta":{"capability":"unsupported.capability"}}`), BodyOutputCompact, false); err != nil {
 		t.Fatalf("WriteCapabilityResponse() error = %v", err)
 	}
 
@@ -51,7 +51,7 @@ func TestWriteCapabilityResponseDebugModePreservesEnvelopeWithoutProviderSource(
 	var stdout bytes.Buffer
 	renderer := Renderer{Stdout: &stdout}
 
-	if err := renderer.WriteCapabilityResponse([]byte(`{"ok":true,"data":{"id":"1"},"meta":{"capability":"amazon.get_product","source":"upstream","cache_hit":false}}`), ModeJSON, true, FormatColumnar); err != nil {
+	if err := renderer.WriteCapabilityResponse([]byte(`{"ok":true,"data":{"id":"1"},"meta":{"capability":"amazon.get_product","source":"upstream","cache_hit":false}}`), BodyOutputCompact, true); err != nil {
 		t.Fatalf("WriteCapabilityResponse() error = %v", err)
 	}
 
@@ -75,7 +75,7 @@ func TestWriteCapabilityResponseErrorModeWritesErrorOnly(t *testing.T) {
 	var stdout bytes.Buffer
 	renderer := Renderer{Stdout: &stdout}
 
-	if err := renderer.WriteCapabilityResponse([]byte(`{"ok":false,"error":{"code":"invalid_request","message":"bad input"},"meta":{"capability":"amazon.get_product","source":"upstream"}}`), ModeJSON, false, FormatColumnar); err != nil {
+	if err := renderer.WriteCapabilityResponse([]byte(`{"ok":false,"error":{"code":"invalid_request","message":"bad input"},"meta":{"capability":"amazon.get_product","source":"upstream"}}`), BodyOutputCompact, false); err != nil {
 		t.Fatalf("WriteCapabilityResponse() error = %v", err)
 	}
 

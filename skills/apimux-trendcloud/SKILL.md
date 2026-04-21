@@ -1,5 +1,5 @@
 ---
-name: trendcloud
+name: apimux-trendcloud
 version: 1.0.0
 description: "TrendCloud 市场趋势与排行榜查询。提供市场趋势、排行榜和筛选值发现能力，适用于电商渠道对比、品牌/品类份额分析、趋势验证等场景。"
 metadata:

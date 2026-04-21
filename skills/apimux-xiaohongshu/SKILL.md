@@ -1,5 +1,5 @@
 ---
-name: xiaohongshu
+name: apimux-xiaohongshu
 version: 1.0.0
 description: "小红书内容查询。提供笔记搜索、笔记详情和评论能力，适用于种草内容研究、笔记巡检、评论抽样等场景。"
 metadata:

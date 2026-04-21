@@ -17,7 +17,6 @@ func TestParseFormat(t *testing.T) {
 		{"auto", FormatAuto, true},
 		{"data", FormatData, true},
 		{"compact", FormatCompact, true},
-		{"columnar", FormatCompact, true},
 		{"weird", "", false},
 	}
 
@@ -65,13 +64,13 @@ func TestProjectCapabilityCompactAmazonGetProduct(t *testing.T) {
 	}
 }
 
-func TestProjectCapabilityColumnarSearchProducts(t *testing.T) {
+func TestProjectCapabilityCompactSearchProducts(t *testing.T) {
 	payload := json.RawMessage(`[
 		{"position":1,"asin":"A1","title":"Desk Lamp","price":{"display":"$19.99"},"rating":4.5,"review_count":10},
 		{"position":2,"asin":"A2","title":"Floor Lamp","price":{"display":"$29.99"},"rating":4.7,"review_count":20}
 	]`)
 
-	body, err := projectCapability("amazon.search_products", payload, FormatColumnar)
+	body, err := projectCapability("amazon.search_products", payload, FormatCompact)
 	if err != nil {
 		t.Fatalf("projectCapability() error = %v", err)
 	}
@@ -81,7 +80,7 @@ func TestProjectCapabilityColumnarSearchProducts(t *testing.T) {
 		Rows    [][]any  `json:"rows"`
 	}
 	if err := json.Unmarshal(body, &got); err != nil {
-		t.Fatalf("unmarshal columnar projection: %v", err)
+		t.Fatalf("unmarshal compact projection: %v", err)
 	}
 	if len(got.Columns) != 6 || len(got.Rows) != 2 {
 		t.Fatalf("unexpected table projection: %#v", got)
@@ -91,7 +90,7 @@ func TestProjectCapabilityColumnarSearchProducts(t *testing.T) {
 	}
 }
 
-func TestProjectCapabilityColumnarGoogleTrends(t *testing.T) {
+func TestProjectCapabilityCompactGoogleTrends(t *testing.T) {
 	payload := json.RawMessage(`{
 		"search_parameters":{"q":"AI","geo":"US","time":"today 12-m"},
 		"timeline_data":[
@@ -100,14 +99,14 @@ func TestProjectCapabilityColumnarGoogleTrends(t *testing.T) {
 		]
 	}`)
 
-	body, err := projectCapability("google_trends.get_interest_over_time", payload, FormatColumnar)
+	body, err := projectCapability("google_trends.get_interest_over_time", payload, FormatCompact)
 	if err != nil {
 		t.Fatalf("projectCapability() error = %v", err)
 	}
 
 	text := string(body)
 	if !strings.Contains(text, `"timeline":{"columns":["date","timestamp","value"]`) {
-		t.Fatalf("expected columnar timeline projection, got %s", text)
+		t.Fatalf("expected compact timeline projection, got %s", text)
 	}
 	if !strings.Contains(text, `"query":"AI"`) {
 		t.Fatalf("expected scalar context preserved, got %s", text)

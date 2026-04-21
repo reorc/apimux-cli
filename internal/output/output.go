@@ -5,13 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 )
 
-type Mode string
+type BodyOutput string
 
 const (
-	ModeJSON   Mode = "json"
-	ModePretty Mode = "pretty"
+	BodyOutputCompact    BodyOutput = "compact"
+	BodyOutputPretty     BodyOutput = "pretty"
+	BodyOutputData       BodyOutput = "data"
+	BodyOutputDataPretty BodyOutput = "data-pretty"
 )
 
 type Renderer struct {
@@ -26,7 +29,35 @@ type envelope struct {
 	Meta  map[string]any  `json:"meta"`
 }
 
-func (r Renderer) WriteCapabilityResponse(body []byte, mode Mode, debug bool, format Format) error {
+func ParseBodyOutput(value string) (BodyOutput, bool) {
+	switch strings.TrimSpace(value) {
+	case "", string(BodyOutputCompact):
+		return BodyOutputCompact, true
+	case string(BodyOutputPretty):
+		return BodyOutputPretty, true
+	case string(BodyOutputData):
+		return BodyOutputData, true
+	case string(BodyOutputDataPretty):
+		return BodyOutputDataPretty, true
+	default:
+		return "", false
+	}
+}
+
+func (o BodyOutput) pretty() bool {
+	return o == BodyOutputPretty || o == BodyOutputDataPretty
+}
+
+func (o BodyOutput) projectionFormat() Format {
+	switch o {
+	case BodyOutputData, BodyOutputDataPretty:
+		return FormatData
+	default:
+		return FormatAuto
+	}
+}
+
+func (r Renderer) WriteCapabilityResponse(body []byte, output BodyOutput, debug bool) error {
 	var env envelope
 	if err := json.Unmarshal(body, &env); err != nil {
 		return err
@@ -50,7 +81,7 @@ func (r Renderer) WriteCapabilityResponse(body []byte, mode Mode, debug bool, fo
 		if err != nil {
 			return err
 		}
-		return r.writeJSON(sanitized, mode)
+		return r.writeJSON(sanitized, false)
 	}
 
 	if len(env.Error) > 0 && string(env.Error) != "null" {
@@ -58,23 +89,23 @@ func (r Renderer) WriteCapabilityResponse(body []byte, mode Mode, debug bool, fo
 		if err != nil {
 			return err
 		}
-		return r.writeJSON(payload, mode)
+		return r.writeJSON(payload, output.pretty())
 	}
 	if len(env.Data) == 0 {
-		return r.writeJSON([]byte("null"), mode)
+		return r.writeJSON([]byte("null"), output.pretty())
 	}
 
 	capability, _ := env.Meta["capability"].(string)
-	projected, err := projectCapability(capability, env.Data, format)
+	projected, err := projectCapability(capability, env.Data, output.projectionFormat())
 	if err != nil {
 		return err
 	}
-	return r.writeJSON(projected, mode)
+	return r.writeJSON(projected, output.pretty())
 }
 
-func (r Renderer) writeJSON(body []byte, mode Mode) error {
+func (r Renderer) writeJSON(body []byte, pretty bool) error {
 	var out bytes.Buffer
-	if mode == ModePretty {
+	if pretty {
 		if err := json.Indent(&out, body, "", "  "); err != nil {
 			return err
 		}
@@ -107,5 +138,5 @@ func (r Renderer) WriteLocalError(message string, code string) error {
 	if err != nil {
 		return err
 	}
-	return r.writeJSON(body, ModeJSON)
+	return r.writeJSON(body, false)
 }
