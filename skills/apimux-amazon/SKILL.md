@@ -556,11 +556,13 @@ apimux amazon search_products --q "wireless earbuds" --market "US" --page 2
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `asin` | string | 商品 ASIN |
+| `market` | string | 市场 |
 | `title` | string | 商品标题 |
 | `brand` | string | 品牌名 |
-| `thumbnail` | string | 缩略图 URL |
+| `product_url` | string | 商品链接 |
+| `main_image` | string | 主图 URL |
 | `rating` | float | 平均评分 |
-| `rating_count` | integer | 评分数量 |
+| `review_count` | integer | 评分数量 |
 | `price` | object | 价格信息 |
 | `position` | integer | 搜索结果排名位置 |
 
@@ -720,6 +722,8 @@ apimux amazon get_category_best_sellers --node-id "3743561" --market "US" --quer
 | `category` | string[] | 类目路径 |
 | `seller_count` | integer | 卖家数量 |
 | `is_fba` | boolean | 是否 FBA |
+| `store_name` | string | 店铺名称 |
+| `product_type` | string | 商品类型 |
 
 ### 常见错误
 
