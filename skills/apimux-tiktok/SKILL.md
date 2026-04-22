@@ -186,7 +186,7 @@ apimux tiktok shop_products --seller-id "123456789" --sort "sale" --top-n 40
 - `sort` 只接受 `sale` 或 `rec`
 - `top_n` 范围 1-200
 - 内部分页 fan-out 对调用方透明
-- 返回的 `data` 直接是商品列表，不包一层 `items`
+- CLI 默认 compact 输出为列式 `{columns, rows}`
 
 ---
 
@@ -223,6 +223,7 @@ apimux tiktok shop_product_info --product-id "1729384756"
 | `discount` | string | 折扣信息 |
 | `images` | string[] | 商品图片 |
 | `is_platform_product` | boolean | 是否平台商品 |
+| `review_count` | integer | 评论数 |
 
 ### 规则
 

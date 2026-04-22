@@ -113,6 +113,93 @@ func TestProjectCapabilityCompactGoogleTrends(t *testing.T) {
 	}
 }
 
+func TestProjectCapabilityCompactRedditGetPostCommentsCompatShape(t *testing.T) {
+	payload := json.RawMessage(`[
+		{"comment_id":"c1","author":"alice","text":"first","score":10,"created_time":"2026-04-22T03:00:00Z","parent_id":"t3_post","depth":0}
+	]`)
+
+	body, err := projectCapability("reddit.get_post_comments", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	items, ok := got["items"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected compat items table, got %#v", got)
+	}
+	columns, _ := items["columns"].([]any)
+	rows, _ := items["rows"].([]any)
+	if len(columns) != 7 || len(rows) != 1 {
+		t.Fatalf("unexpected compat table shape: %#v", items)
+	}
+	if columns[0] != "id" || columns[2] != "body" || columns[4] != "created_at" {
+		t.Fatalf("unexpected compat columns: %#v", columns)
+	}
+}
+
+func TestProjectCapabilityCompactTiktokShopProductsCanonicalColumns(t *testing.T) {
+	payload := json.RawMessage(`[
+		{"product_id":"p1","product_name":"Desk Lamp","product_cover":"https://cdn.example/p1.jpg","product_sold_count":12,"format_available_price":"$9.99","format_origin_price":"$12.99","discount":"20% off"}
+	]`)
+
+	body, err := projectCapability("tiktok.shop_products", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+
+	var got struct {
+		Columns []string `json:"columns"`
+		Rows    [][]any  `json:"rows"`
+	}
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	if len(got.Columns) != 7 || len(got.Rows) != 1 {
+		t.Fatalf("unexpected shop_products projection: %#v", got)
+	}
+	if got.Columns[1] != "product_name" || got.Columns[4] != "format_available_price" {
+		t.Fatalf("unexpected shop_products columns: %#v", got.Columns)
+	}
+}
+
+func TestProjectCapabilityCompactTiktokShopProductInfoIncludesReviewCount(t *testing.T) {
+	payload := json.RawMessage(`{
+		"product_id":"p1",
+		"product_name":"Desk Lamp",
+		"status":1,
+		"seller_id":"seller-1",
+		"seller_name":"Seller",
+		"sold_count":12,
+		"rating":4.9,
+		"original_price":"$12.99",
+		"real_price":"$9.99",
+		"discount":"20% off",
+		"images":["https://cdn.example/p1.jpg"],
+		"is_platform_product":true,
+		"review_count":87
+	}`)
+
+	body, err := projectCapability("tiktok.shop_product_info", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	if got["seller_id"] != "seller-1" || got["review_count"] != float64(87) {
+		t.Fatalf("expected seller_id and review_count in compact output, got %#v", got)
+	}
+	if got["is_platform_product"] != true {
+		t.Fatalf("expected is_platform_product in compact output, got %#v", got)
+	}
+}
+
 func TestProjectCapabilityUnsupported(t *testing.T) {
 	_, err := projectCapability("unsupported.capability", json.RawMessage(`[]`), FormatCompact)
 	var unsupported *UnsupportedProjectionError

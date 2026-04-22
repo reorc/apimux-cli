@@ -168,19 +168,19 @@ search → get_post_detail → get_post_comments
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `comment_id` | string | 评论 ID |
+| `id` | string | 评论 ID |
 | `author` | string | 评论作者 |
-| `text` | string | 评论内容 |
+| `body` | string | 评论内容 |
 | `score` | integer | 评论分数 |
-| `created_time` | string | RFC3339 发布时间 |
-| `permalink` | string | Reddit permalink |
+| `created_at` | string | RFC3339 发布时间 |
 | `parent_id` | string | 父节点 ID |
 | `depth` | integer | 评论层级 |
 
 ### 规则
 
 - `post_id` 必须是 `t3_xxxxx` 格式
-- 分页状态放在 `meta.cursor` / `meta.has_more`
+- CLI 默认 compact 输出使用 `items.{columns,rows}` compat shape
+- 分页状态仍放在 `meta.cursor` / `meta.has_more`
 
 ---
 

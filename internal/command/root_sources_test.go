@@ -879,7 +879,7 @@ func TestRedditSearchCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	if got := stdout.String(); !strings.Contains(got, `"columns":["post_id","title","subreddit","score","num_comments","created_utc"]`) || !strings.Contains(got, `"rows":[]`) {
+	if got := stdout.String(); !strings.Contains(got, `"columns":["post_id","title","subreddit","score","num_comments","created_at"]`) || !strings.Contains(got, `"rows":[]`) {
 		t.Fatalf("expected compact table output, got %s", got)
 	}
 }
