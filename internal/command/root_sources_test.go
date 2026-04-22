@@ -750,7 +750,7 @@ func TestGoogleAdsSearchAdvertisersCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	assertCompactTableOutputContains(t, stdout.String(), `"advertisers":{"columns":["advertiser_id","advertiser_name","ads_count","region","is_verified"]`, `"domains":[]`)
+	assertCompactTableOutputContains(t, stdout.String(), `"advertisers":null`, `"domains":[]`)
 }
 
 func TestGoogleAdsListAdCreativesCallsService(t *testing.T) {

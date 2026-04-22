@@ -846,6 +846,10 @@ func projectCapabilityWithMeta(capability string, data json.RawMessage, meta map
 		return projectAmazonSearchCategory(data)
 	case "amazon.get_category_trend":
 		return projectAmazonCategoryTrend(data, meta)
+	case "google_ads.search_advertisers":
+		return projectGoogleAdsSearchAdvertisers(data)
+	case "tiktok.shop_products":
+		return projectTikTokShopProducts(data)
 	default:
 		return nil, false, nil
 	}
@@ -1212,6 +1216,79 @@ func projectAmazonCategoryTrend(data json.RawMessage, meta map[string]any) ([]by
 			"columns": columns,
 			"rows":    tableRows,
 		},
+	})
+	return body, true, err
+}
+
+func projectGoogleAdsSearchAdvertisers(data json.RawMessage) ([]byte, bool, error) {
+	var payload map[string]any
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return nil, false, err
+	}
+
+	out := map[string]any{}
+
+	if advertisers, ok := payload["advertisers"].([]any); ok {
+		if len(advertisers) == 0 {
+			out["advertisers"] = nil
+		} else {
+			table, err := projectTable(advertisers, tableRule{
+				From:  "advertisers",
+				To:    "advertisers",
+				Limit: 10,
+				Columns: []fieldRule{
+					{From: "advertiser_name", To: "name"},
+					{From: "advertiser_id", To: "id"},
+					{From: "region", To: "region"},
+					{From: "ads_count", To: "ads_count"},
+					{From: "is_verified", To: "is_verified"},
+				},
+			})
+			if err != nil {
+				return nil, false, err
+			}
+			out["advertisers"] = table
+		}
+	}
+
+	if domains, ok := payload["domains"].([]any); ok {
+		list, err := projectList(domains, listRule{
+			From:  "domains",
+			To:    "domains",
+			Limit: 10,
+			Fields: []fieldRule{
+				{From: "domain", To: "name"},
+			},
+		})
+		if err != nil {
+			return nil, false, err
+		}
+		out["domains"] = list
+	}
+
+	body, err := json.Marshal(out)
+	return body, true, err
+}
+
+func projectTikTokShopProducts(data json.RawMessage) ([]byte, bool, error) {
+	projected, err := projectCapability("tiktok.shop_products", data, FormatCompact)
+	if err != nil {
+		return nil, false, err
+	}
+
+	var items any
+	if err := json.Unmarshal(projected, &items); err != nil {
+		return nil, false, err
+	}
+
+	var rawItems []any
+	if err := json.Unmarshal(data, &rawItems); err != nil {
+		return nil, false, err
+	}
+
+	body, err := json.Marshal(map[string]any{
+		"items":     items,
+		"items_len": len(rawItems),
 	})
 	return body, true, err
 }

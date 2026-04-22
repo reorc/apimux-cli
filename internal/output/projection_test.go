@@ -425,6 +425,78 @@ func TestProjectCapabilityCompactTiktokShopProductsCanonicalColumns(t *testing.T
 	}
 }
 
+func TestProjectCapabilityWithMetaTikTokShopProductsWrapsItemsAndLength(t *testing.T) {
+	payload := json.RawMessage(`[
+		{"product_id":"p1","product_name":"Desk Lamp","product_cover":"https://cdn.example/p1.jpg","product_sold_count":12,"format_available_price":"$9.99","format_origin_price":"$12.99","discount":"20% off"},
+		{"product_id":"p2","product_name":"Coffee Mug","product_cover":"https://cdn.example/p2.jpg","product_sold_count":3,"format_available_price":"$4.99","format_origin_price":"$6.99","discount":"28% off"}
+	]`)
+
+	body, ok, err := projectCapabilityWithMeta("tiktok.shop_products", payload, nil, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapabilityWithMeta() error = %v", err)
+	}
+	if !ok {
+		t.Fatal("expected custom meta projection")
+	}
+
+	var got struct {
+		Items struct {
+			Columns []string `json:"columns"`
+			Rows    [][]any  `json:"rows"`
+		} `json:"items"`
+		ItemsLen float64 `json:"items_len"`
+	}
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal custom projection: %v", err)
+	}
+	if got.ItemsLen != 2 {
+		t.Fatalf("expected items_len=2, got %#v", got.ItemsLen)
+	}
+	if len(got.Items.Columns) != 7 || len(got.Items.Rows) != 2 {
+		t.Fatalf("unexpected wrapped shop_products projection: %#v", got)
+	}
+}
+
+func TestProjectCapabilityWithMetaGoogleAdsSearchAdvertisersCompatShape(t *testing.T) {
+	payload := json.RawMessage(`{
+		"advertisers":[{"advertiser_id":"AR1","advertiser_name":"Example Inc.","region":"US","ads_count":{"lower":10,"upper":20},"is_verified":true}],
+		"domains":[{"domain":"example.com"}]
+	}`)
+
+	body, ok, err := projectCapabilityWithMeta("google_ads.search_advertisers", payload, nil, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapabilityWithMeta() error = %v", err)
+	}
+	if !ok {
+		t.Fatal("expected custom meta projection")
+	}
+
+	text := string(body)
+	if !strings.Contains(text, `"advertisers":{"columns":["name","id","region","ads_count","is_verified"]`) {
+		t.Fatalf("expected Kamay-compatible advertiser columns, got %s", text)
+	}
+	if !strings.Contains(text, `"domains":[{"name":"example.com"}]`) {
+		t.Fatalf("expected Kamay-compatible domain shape, got %s", text)
+	}
+}
+
+func TestProjectCapabilityWithMetaGoogleAdsSearchAdvertisersPreservesNullAdvertisers(t *testing.T) {
+	payload := json.RawMessage(`{"advertisers":[],"domains":[{"domain":"example.com"}]}`)
+
+	body, ok, err := projectCapabilityWithMeta("google_ads.search_advertisers", payload, nil, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapabilityWithMeta() error = %v", err)
+	}
+	if !ok {
+		t.Fatal("expected custom meta projection")
+	}
+
+	text := string(body)
+	if !strings.Contains(text, `"advertisers":null`) {
+		t.Fatalf("expected advertisers=null for empty advertiser list, got %s", text)
+	}
+}
+
 func TestProjectCapabilityCompactTiktokShopProductInfoIncludesReviewCount(t *testing.T) {
 	payload := json.RawMessage(`{
 		"product_id":"p1",
