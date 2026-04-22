@@ -96,50 +96,10 @@ func (r Renderer) WriteCapabilityResponse(body []byte, output BodyOutput, debug 
 	}
 
 	capability, _ := env.Meta["capability"].(string)
-	if custom, ok, err := projectCapabilityWithMeta(capability, env.Data, env.Meta, output.projectionFormat()); err != nil {
-		return err
-	} else if ok {
-		metadata := extractCriticalMetadata(env.Meta)
-		if len(metadata) > 0 {
-			var projectedData any
-			if err := json.Unmarshal(custom, &projectedData); err != nil {
-				return err
-			}
-			wrapped, err := json.Marshal(map[string]any{
-				"data": projectedData,
-				"meta": metadata,
-			})
-			if err != nil {
-				return err
-			}
-			return r.writeJSON(wrapped, output.pretty())
-		}
-		return r.writeJSON(custom, output.pretty())
-	}
-	projected, err := projectCapability(capability, env.Data, output.projectionFormat())
+	projected, err := renderCapabilityOutput(capability, env.Data, env.Meta, output.projectionFormat())
 	if err != nil {
 		return err
 	}
-
-	// Extract critical metadata for compact mode
-	metadata := extractCriticalMetadata(env.Meta)
-	if len(metadata) > 0 {
-		// Wrap projected data with metadata
-		var projectedData any
-		if err := json.Unmarshal(projected, &projectedData); err != nil {
-			return err
-		}
-		wrapper := map[string]any{
-			"data": projectedData,
-			"meta": metadata,
-		}
-		wrapped, err := json.Marshal(wrapper)
-		if err != nil {
-			return err
-		}
-		return r.writeJSON(wrapped, output.pretty())
-	}
-
 	return r.writeJSON(projected, output.pretty())
 }
 
@@ -179,61 +139,4 @@ func (r Renderer) WriteLocalError(message string, code string) error {
 		return err
 	}
 	return r.writeJSON(body, false)
-}
-
-// extractCriticalMetadata extracts pagination and partial-failure metadata
-// that agents need to see even in compact mode
-func extractCriticalMetadata(meta map[string]any) map[string]any {
-	if meta == nil {
-		return nil
-	}
-
-	critical := make(map[string]any)
-	capability, _ := meta["capability"].(string)
-
-	// Pagination metadata
-	if cursor, ok := meta["cursor"]; ok {
-		critical["cursor"] = cursor
-	}
-	if hasMore, ok := meta["has_more"]; ok && !suppressAmazonCompactMeta(capability) {
-		critical["has_more"] = hasMore
-	}
-	if currentPage, ok := meta["current_page"]; ok && !suppressAmazonCompactMeta(capability) {
-		critical["current_page"] = currentPage
-	}
-	if nextPage, ok := meta["next_page"]; ok {
-		critical["next_page"] = nextPage
-	}
-	if total, ok := meta["total"]; ok && !suppressAmazonCompactMeta(capability) {
-		critical["total"] = total
-	}
-
-	// Partial-failure metadata
-	if partial, ok := meta["partial"]; ok && partial == true {
-		critical["partial"] = partial
-		if subrequestCount, ok := meta["subrequest_count"]; ok {
-			critical["subrequest_count"] = subrequestCount
-		}
-		if subrequests, ok := meta["subrequests"]; ok {
-			critical["subrequests"] = subrequests
-		}
-	}
-
-	return critical
-}
-
-func suppressAmazonCompactMeta(capability string) bool {
-	switch capability {
-	case "amazon.search_category",
-		"amazon.list_asin_keywords",
-		"amazon.query_aba_keywords",
-		"amazon.get_asin_sales_daily_trend",
-		"amazon.get_asins_sales_history",
-		"amazon.get_variant_sales_30d",
-		"amazon.get_product_reviews",
-		"amazon.get_category_trend":
-		return true
-	default:
-		return false
-	}
 }

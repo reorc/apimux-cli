@@ -830,31 +830,6 @@ func ParseFormat(value string) (Format, bool) {
 	}
 }
 
-func projectCapabilityWithMeta(capability string, data json.RawMessage, meta map[string]any, format Format) ([]byte, bool, error) {
-	if format == FormatData {
-		return nil, false, nil
-	}
-
-	switch capability {
-	case "amazon.get_asin_sales_daily_trend":
-		return projectAmazonASINSalesDailyTrend(data, meta)
-	case "amazon.get_asins_sales_history":
-		return projectAmazonASINSalesHistory(data, meta)
-	case "amazon.get_variant_sales_30d":
-		return projectAmazonVariantSales30d(data, meta)
-	case "amazon.search_category":
-		return projectAmazonSearchCategory(data)
-	case "amazon.get_category_trend":
-		return projectAmazonCategoryTrend(data, meta)
-	case "google_ads.search_advertisers":
-		return projectGoogleAdsSearchAdvertisers(data)
-	case "tiktok.shop_products":
-		return projectTikTokShopProducts(data)
-	default:
-		return nil, false, nil
-	}
-}
-
 func projectCapability(capability string, data json.RawMessage, format Format) ([]byte, error) {
 	if format == FormatData {
 		return data, nil
@@ -1101,14 +1076,14 @@ func getRoot(value any) any {
 	return value
 }
 
-func projectAmazonASINSalesDailyTrend(data json.RawMessage, meta map[string]any) ([]byte, bool, error) {
+func projectAmazonASINSalesDailyTrend(data json.RawMessage, meta map[string]any) ([]byte, error) {
 	projected, err := projectCapability("amazon.get_asin_sales_daily_trend", data, FormatCompact)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	var items any
 	if err := json.Unmarshal(projected, &items); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	out := map[string]any{
 		"items": items.(map[string]any)["items"],
@@ -1117,17 +1092,17 @@ func projectAmazonASINSalesDailyTrend(data json.RawMessage, meta map[string]any)
 		out["asin"] = asin
 	}
 	body, err := json.Marshal(out)
-	return body, true, err
+	return body, err
 }
 
-func projectAmazonASINSalesHistory(data json.RawMessage, meta map[string]any) ([]byte, bool, error) {
+func projectAmazonASINSalesHistory(data json.RawMessage, meta map[string]any) ([]byte, error) {
 	projected, err := projectCapability("amazon.get_asins_sales_history", data, FormatCompact)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	var payload map[string]any
 	if err := json.Unmarshal(projected, &payload); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	out := map[string]any{
 		"items": payload["items"],
@@ -1139,17 +1114,17 @@ func projectAmazonASINSalesHistory(data json.RawMessage, meta map[string]any) ([
 		out["asins_without_history"] = withoutHistory
 	}
 	body, err := json.Marshal(out)
-	return body, true, err
+	return body, err
 }
 
-func projectAmazonVariantSales30d(data json.RawMessage, meta map[string]any) ([]byte, bool, error) {
+func projectAmazonVariantSales30d(data json.RawMessage, meta map[string]any) ([]byte, error) {
 	projected, err := projectCapability("amazon.get_variant_sales_30d", data, FormatCompact)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	var payload map[string]any
 	if err := json.Unmarshal(projected, &payload); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	out := map[string]any{
 		"items": payload["items"],
@@ -1158,28 +1133,28 @@ func projectAmazonVariantSales30d(data json.RawMessage, meta map[string]any) ([]
 		out["queried_asin"] = queried
 	}
 	body, err := json.Marshal(out)
-	return body, true, err
+	return body, err
 }
 
-func projectAmazonSearchCategory(data json.RawMessage) ([]byte, bool, error) {
+func projectAmazonSearchCategory(data json.RawMessage, _ map[string]any) ([]byte, error) {
 	projected, err := projectCapability("amazon.search_category", data, FormatCompact)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	var payload map[string]any
 	if err := json.Unmarshal(projected, &payload); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	body, err := json.Marshal(map[string]any{
 		"items": payload["items"],
 	})
-	return body, true, err
+	return body, err
 }
 
-func projectAmazonCategoryTrend(data json.RawMessage, meta map[string]any) ([]byte, bool, error) {
+func projectAmazonCategoryTrend(data json.RawMessage, meta map[string]any) ([]byte, error) {
 	var rows []map[string]any
 	if err := json.Unmarshal(data, &rows); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	metrics := extractStringList(meta, "metrics")
@@ -1217,13 +1192,13 @@ func projectAmazonCategoryTrend(data json.RawMessage, meta map[string]any) ([]by
 			"rows":    tableRows,
 		},
 	})
-	return body, true, err
+	return body, err
 }
 
-func projectGoogleAdsSearchAdvertisers(data json.RawMessage) ([]byte, bool, error) {
+func projectGoogleAdsSearchAdvertisers(data json.RawMessage, _ map[string]any) ([]byte, error) {
 	var payload map[string]any
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	out := map[string]any{}
@@ -1245,7 +1220,7 @@ func projectGoogleAdsSearchAdvertisers(data json.RawMessage) ([]byte, bool, erro
 				},
 			})
 			if err != nil {
-				return nil, false, err
+				return nil, err
 			}
 			out["advertisers"] = table
 		}
@@ -1261,36 +1236,36 @@ func projectGoogleAdsSearchAdvertisers(data json.RawMessage) ([]byte, bool, erro
 			},
 		})
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
 		out["domains"] = list
 	}
 
 	body, err := json.Marshal(out)
-	return body, true, err
+	return body, err
 }
 
-func projectTikTokShopProducts(data json.RawMessage) ([]byte, bool, error) {
+func projectTikTokShopProducts(data json.RawMessage, _ map[string]any) ([]byte, error) {
 	projected, err := projectCapability("tiktok.shop_products", data, FormatCompact)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	var items any
 	if err := json.Unmarshal(projected, &items); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	var rawItems []any
 	if err := json.Unmarshal(data, &rawItems); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	body, err := json.Marshal(map[string]any{
 		"items":     items,
 		"items_len": len(rawItems),
 	})
-	return body, true, err
+	return body, err
 }
 
 func extractStringList(meta map[string]any, key string) []string {
