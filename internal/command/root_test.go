@@ -76,3 +76,79 @@ func TestSchemaListCallsService(t *testing.T) {
 		t.Fatalf("expected service-backed schema payload, got %s", stdout.String())
 	}
 }
+
+func TestCompletionZshGeneratesScript(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"completion", "zsh",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "#compdef apimux") {
+		t.Fatalf("expected zsh completion script, got %s", stdout.String())
+	}
+}
+
+func TestCompletionBashGeneratesScript(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"completion", "bash",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "bash completion for apimux") {
+		t.Fatalf("expected bash completion script, got %s", stdout.String())
+	}
+}
+
+func TestCompletionListsSourceSubcommands(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"__complete", "amazon", "",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "query_aba_keywords") {
+		t.Fatalf("expected source subcommands in completion output, got %s", stdout.String())
+	}
+}
+
+func TestCompletionRequiresSupportedShell(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"completion",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode == 0 {
+		t.Fatalf("expected non-zero exit code")
+	}
+	if !strings.Contains(stdout.String(), `"cli_invalid_command"`) {
+		t.Fatalf("expected canonical local error, got %s", stdout.String())
+	}
+}

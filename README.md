@@ -56,6 +56,22 @@ Useful flags:
 - `--output data`: raw `data` payload without projection
 - `--output data-pretty`: raw `data` payload with indented JSON
 
+Shell completion:
+
+```bash
+# bash
+apimux completion bash > ~/.local/share/bash-completion/completions/apimux
+
+# zsh
+apimux completion zsh > "${fpath[1]}/_apimux"
+
+# fish
+apimux completion fish > ~/.config/fish/completions/apimux.fish
+
+# PowerShell
+apimux completion powershell | Out-String | Invoke-Expression
+```
+
 ## Repo Layout
 
 - `cmd/apimux`: entrypoint

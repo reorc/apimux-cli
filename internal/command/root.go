@@ -161,6 +161,7 @@ func (r *Root) newCommand(runCtx *runContext) *cobra.Command {
 	rootCmd.AddCommand(
 		r.newVersionCommand(),
 		r.newConfigCommand(),
+		r.newCompletionCommand(),
 		r.newUpgradeCommand(),
 		r.newSchemaCommand(runCtx),
 		r.newCapabilityCommand(runCtx),
@@ -290,6 +291,54 @@ func (r *Root) newConfigCommand() *cobra.Command {
 	configCmd.AddCommand(setCmd, initCmd)
 
 	return configCmd
+}
+
+func (r *Root) newCompletionCommand() *cobra.Command {
+	completionCmd := &cobra.Command{
+		Use:   "completion",
+		Short: "Generate shell completion scripts",
+		Long:  "Generate shell completion scripts for apimux.\n\nLoad the generated script from your shell profile to enable command and flag completion.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return &cliError{
+				exitCode: 2,
+				code:     "cli_invalid_command",
+				message:  "completion supports: bash, zsh, fish, powershell",
+			}
+		},
+	}
+
+	completionCmd.AddCommand(
+		&cobra.Command{
+			Use:   "bash",
+			Short: "Generate bash completion script",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return cmd.Root().GenBashCompletion(r.stdout)
+			},
+		},
+		&cobra.Command{
+			Use:   "zsh",
+			Short: "Generate zsh completion script",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return cmd.Root().GenZshCompletion(r.stdout)
+			},
+		},
+		&cobra.Command{
+			Use:   "fish",
+			Short: "Generate fish completion script",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return cmd.Root().GenFishCompletion(r.stdout, true)
+			},
+		},
+		&cobra.Command{
+			Use:   "powershell",
+			Short: "Generate PowerShell completion script",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return cmd.Root().GenPowerShellCompletion(r.stdout)
+			},
+		},
+	)
+
+	return completionCmd
 }
 
 func (r *Root) newUpgradeCommand() *cobra.Command {

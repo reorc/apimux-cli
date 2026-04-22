@@ -58,7 +58,7 @@ func TestAmazonGetProductCallsServiceAndPrintsDataOnly(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), `"image_count":2`) || !strings.Contains(stdout.String(), `"variant_count":2`) {
+	if !strings.Contains(stdout.String(), `"images":[{"link":"a"},{"link":"b"}]`) || !strings.Contains(stdout.String(), `"variants":[{"asin":"A"},{"asin":"B"}]`) {
 		t.Fatalf("expected default compact projection, got %s", stdout.String())
 	}
 	if strings.Contains(stdout.String(), `"meta"`) || strings.Contains(stdout.String(), `"ok"`) {
@@ -131,11 +131,11 @@ func TestAmazonGetProductCompactProjection(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), `"image_count":2`) || !strings.Contains(stdout.String(), `"variant_count":2`) {
+	if !strings.Contains(stdout.String(), `"feature_bullets":["one","two","three","four"]`) {
 		t.Fatalf("expected compact projection, got %s", stdout.String())
 	}
-	if !strings.Contains(stdout.String(), `"images":{"columns":["variant","link"]`) {
-		t.Fatalf("expected compact projection to include images table, got %s", stdout.String())
+	if !strings.Contains(stdout.String(), `"images":[{"link":"a","variant":"MAIN"},{"link":"b","variant":"PT01"}]`) {
+		t.Fatalf("expected compact projection to keep image list, got %s", stdout.String())
 	}
 }
 
@@ -405,7 +405,7 @@ func TestAmazonListASINKeywordsCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	assertDataOnlyOutputContains(t, stdout.String(), `"keyword":"yoga mat"`)
+	assertCompactTableOutputContains(t, stdout.String(), `"columns":["keyword","kw_characters","conversion_characters","exposure_type","last_rank_str","ad_last_rank_str","est_searches_num","searches_rank","ratio_score"]`, `"yoga mat"`)
 }
 
 func TestAmazonQueryABAKeywordsCallsService(t *testing.T) {
@@ -439,7 +439,7 @@ func TestAmazonQueryABAKeywordsCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	assertDataOnlyOutputContains(t, stdout.String(), `"keyword":"yoga mat"`)
+	assertCompactTableOutputContains(t, stdout.String(), `"columns":["keyword","keyword_cn_name","rank","search_volume","word_count","product_count","rank_change_of_weekly","cpc","cpc_range","search_conversion_rate","search_conversion_rate_d90","click_conversion_rate_d90","click_of_90d","sales_volume_of_90d","share_click_rate","share_conversion_rate","search_volume_growth_rate_trend","top3_asin","top3_brand","top3_category","season","update"]`, `"yoga mat"`)
 }
 
 func TestAmazonGetASINSalesDailyTrendCallsService(t *testing.T) {
@@ -470,7 +470,7 @@ func TestAmazonGetASINSalesDailyTrendCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	assertDataOnlyOutputContains(t, stdout.String(), `"sales":12`)
+	assertCompactTableOutputContains(t, stdout.String(), `"columns":["date","sales"]`, `"2026-04-01"`)
 }
 
 func TestAmazonGetASINsSalesHistoryCallsService(t *testing.T) {
@@ -530,7 +530,7 @@ func TestAmazonGetVariantSales30dCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	assertDataOnlyOutputContains(t, stdout.String(), `"bought_in_past_month":12`)
+	assertCompactTableOutputContains(t, stdout.String(), `"columns":["asin","bought_in_past_month","update_time"]`, `"B0CM5JV26D"`)
 }
 
 func TestTikTokSearchVideosCallsService(t *testing.T) {
