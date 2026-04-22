@@ -408,7 +408,54 @@ func (r *Root) newSchemaCommand(runCtx *runContext) *cobra.Command {
 		},
 	}
 
-	schemaCmd.AddCommand(listCmd, showCmd)
+	capabilitiesCmd := &cobra.Command{
+		Use:   "capabilities",
+		Short: "List capability names only",
+		Long:  "List all available capability names, one per line.\n\nUse this instead of 'schema list' when you only need capability names without full parameter details.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			resp, err := runCtx.client.ListSchemas(cmd.Context())
+			if err != nil {
+				return writeServiceResponse(runCtx, resp, err)
+			}
+			if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+				return writeServiceResponse(runCtx, resp, nil)
+			}
+
+			var envelope struct {
+				OK   bool `json:"ok"`
+				Data []struct {
+					Name string `json:"name"`
+				} `json:"data"`
+			}
+			if err := json.Unmarshal(resp.Body, &envelope); err != nil || !envelope.OK {
+				return writeServiceResponse(runCtx, resp, nil)
+			}
+
+			asJSON, _ := cmd.Flags().GetBool("json")
+			if asJSON {
+				names := make([]string, 0, len(envelope.Data))
+				for _, s := range envelope.Data {
+					names = append(names, s.Name)
+				}
+				body, err := json.Marshal(names)
+				if err != nil {
+					return err
+				}
+				_, err = fmt.Fprintln(runCtx.stdout, string(body))
+				return err
+			}
+
+			for _, s := range envelope.Data {
+				if _, err := fmt.Fprintln(runCtx.stdout, s.Name); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	}
+	capabilitiesCmd.Flags().Bool("json", false, "Output as JSON array instead of one name per line")
+
+	schemaCmd.AddCommand(listCmd, showCmd, capabilitiesCmd)
 	return schemaCmd
 }
 

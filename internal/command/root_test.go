@@ -77,6 +77,70 @@ func TestSchemaListCallsService(t *testing.T) {
 	}
 }
 
+func TestSchemaCapabilitiesOutputsNames(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/schema" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"ok":true,"data":[{"name":"amazon.get_product"},{"name":"reddit.search"}]}`))
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"schema", "capabilities",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "amazon.get_product\n") {
+		t.Fatalf("expected one name per line, got %s", output)
+	}
+	if !strings.Contains(output, "reddit.search\n") {
+		t.Fatalf("expected one name per line, got %s", output)
+	}
+	if strings.Contains(output, "{") || strings.Contains(output, "[") {
+		t.Fatalf("expected plain text output, not JSON, got %s", output)
+	}
+}
+
+func TestSchemaCapabilitiesJSONFlag(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/schema" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"ok":true,"data":[{"name":"amazon.get_product"},{"name":"reddit.search"}]}`))
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"schema", "capabilities", "--json",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, `["amazon.get_product","reddit.search"]`) {
+		t.Fatalf("expected JSON array output, got %s", output)
+	}
+}
+
 func TestCompletionZshGeneratesScript(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
