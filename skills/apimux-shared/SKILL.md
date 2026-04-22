@@ -42,8 +42,9 @@ APIMux **service contract** 仍然使用 canonical envelope：
 **CLI 默认规则（agent-friendly）**：
 - `apimux <source> <capability>` 默认输出 compact agent-facing body
 - 错误时默认只输出 `{"error": ...}`
-- 默认输出不包含 `meta`
-- 需要排查问题或查看分页/partial 元信息时，使用 `--debug` 输出完整 envelope
+- 默认输出会自动暴露关键 `meta` 字段（分页、partial-failure），格式为 `{"data": ..., "meta": {...}}`
+- 无关键 metadata 时，输出仍为纯 data（向后兼容）
+- 需要排查问题或查看完整 envelope 时，使用 `--debug` 输出完整 envelope
 - CLI debug 输出会去掉 provider 标识字段，不暴露上游供应商
 
 ## 错误处理（Error Taxonomy）
@@ -103,6 +104,35 @@ Service 侧错误响应结构：
 - 必须检查 `meta.subrequests` 了解哪些维度失败
 - 不要把 `null` 值当作"该维度数据为零"
 - 向用户说明哪些数据是完整的、哪些缺失
+
+## 关键 Metadata 自动暴露
+
+从 CLI 版本 1.1.0 开始，compact 模式会自动暴露以下关键 metadata：
+
+**分页 metadata（当存在时）：**
+- `cursor` — 下一页的游标
+- `has_more` — 是否还有更多数据
+- `current_page` — 当前页码
+- `next_page` — 下一页页码
+- `total` — 总记录数
+
+**Partial-failure metadata（当 `partial=true` 时）：**
+- `partial` — 标识部分成功
+- `subrequest_count` — 子请求总数
+- `subrequests` — 各子请求的状态详情
+
+**输出格式：**
+```json
+{
+  "data": { ... },
+  "meta": {
+    "cursor": "t3_xyz789",
+    "has_more": true
+  }
+}
+```
+
+当无关键 metadata 时，输出仍为纯 data（向后兼容）。
 
 ## CLI 通用用法
 

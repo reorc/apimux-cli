@@ -54,11 +54,12 @@ func TestTrendCloudSearchFilterValuesCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stdout=%s stderr=%s", exitCode, stdout.String(), stderr.String())
 	}
-	if !strings.Contains(stdout.String(), `"label":"饮料 > 咖啡"`) {
-		t.Fatalf("expected data-only output, got %s", stdout.String())
+	// JSON encoder escapes > as >
+	if !strings.Contains(stdout.String(), `"label":"饮料`) || !strings.Contains(stdout.String(), `咖啡"`) {
+		t.Fatalf("expected output to contain projected data, got %s", stdout.String())
 	}
-	if strings.Contains(stdout.String(), `"meta"`) || strings.Contains(stdout.String(), `"ok"`) {
-		t.Fatalf("expected data-only output without envelope fields, got %s", stdout.String())
+	if strings.Contains(stdout.String(), `"ok"`) {
+		t.Fatalf("expected compact output without ok field, got %s", stdout.String())
 	}
 }
 

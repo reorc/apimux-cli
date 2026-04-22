@@ -98,3 +98,130 @@ func TestWriteLocalErrorWritesJSONErrorObject(t *testing.T) {
 		t.Fatalf("unexpected local error output:\n got: %q\nwant: %q", got, want)
 	}
 }
+
+func TestWriteCapabilityResponseCompactModeExposesPaginationMetadata(t *testing.T) {
+	var stdout bytes.Buffer
+	renderer := Renderer{Stdout: &stdout}
+
+	input := `{
+		"ok": true,
+		"data": [
+			{"post_id": "abc123", "title": "First Post", "score": 100},
+			{"post_id": "def456", "title": "Second Post", "score": 50}
+		],
+		"meta": {
+			"capability": "reddit.search",
+			"cursor": "t3_xyz789",
+			"has_more": true
+		}
+	}`
+
+	if err := renderer.WriteCapabilityResponse([]byte(input), BodyOutputCompact, false); err != nil {
+		t.Fatalf("WriteCapabilityResponse() error = %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("unmarshal compact output: %v", err)
+	}
+
+	// Verify data is present
+	if _, ok := got["data"]; !ok {
+		t.Fatalf("expected data field in compact output, got %#v", got)
+	}
+
+	// Verify pagination metadata is exposed
+	meta, ok := got["meta"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected meta field in compact output, got %#v", got)
+	}
+	if meta["cursor"] != "t3_xyz789" {
+		t.Fatalf("expected cursor in meta, got %#v", meta)
+	}
+	if meta["has_more"] != true {
+		t.Fatalf("expected has_more=true in meta, got %#v", meta)
+	}
+}
+
+func TestWriteCapabilityResponseCompactModeExposesPartialFailureMetadata(t *testing.T) {
+	var stdout bytes.Buffer
+	renderer := Renderer{Stdout: &stdout}
+
+	input := `{
+		"ok": true,
+		"data": {
+			"sales_volume": 1000,
+			"brand_count": 50,
+			"avg_price": null
+		},
+		"meta": {
+			"capability": "amazon.get_category_trend",
+			"partial": true,
+			"subrequest_count": 3,
+			"subrequests": [
+				{"name": "sales_volume", "ok": true},
+				{"name": "brand_count", "ok": true},
+				{"name": "avg_price", "ok": false, "error": {"code": "upstream_timeout"}}
+			]
+		}
+	}`
+
+	if err := renderer.WriteCapabilityResponse([]byte(input), BodyOutputCompact, false); err != nil {
+		t.Fatalf("WriteCapabilityResponse() error = %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("unmarshal compact output: %v", err)
+	}
+
+	// Verify data is present
+	if _, ok := got["data"]; !ok {
+		t.Fatalf("expected data field in compact output, got %#v", got)
+	}
+
+	// Verify partial-failure metadata is exposed
+	meta, ok := got["meta"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected meta field in compact output, got %#v", got)
+	}
+	if meta["partial"] != true {
+		t.Fatalf("expected partial=true in meta, got %#v", meta)
+	}
+	if meta["subrequest_count"] != float64(3) {
+		t.Fatalf("expected subrequest_count=3 in meta, got %#v", meta)
+	}
+	if _, ok := meta["subrequests"]; !ok {
+		t.Fatalf("expected subrequests in meta, got %#v", meta)
+	}
+}
+
+func TestWriteCapabilityResponseCompactModeWithoutMetadataOmitsMeta(t *testing.T) {
+	var stdout bytes.Buffer
+	renderer := Renderer{Stdout: &stdout}
+
+	input := `{
+		"ok": true,
+		"data": {"asin": "B001", "title": "Product"},
+		"meta": {
+			"capability": "amazon.get_product"
+		}
+	}`
+
+	if err := renderer.WriteCapabilityResponse([]byte(input), BodyOutputCompact, false); err != nil {
+		t.Fatalf("WriteCapabilityResponse() error = %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("unmarshal compact output: %v", err)
+	}
+
+	// When no critical metadata exists, output should be data only (no meta wrapper)
+	if _, ok := got["meta"]; ok {
+		t.Fatalf("expected no meta field when no critical metadata present, got %#v", got)
+	}
+	if _, ok := got["data"]; ok {
+		t.Fatalf("expected unwrapped data when no critical metadata present, got %#v", got)
+	}
+}

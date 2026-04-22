@@ -41,7 +41,7 @@ func TestAmazonSearchCategoryCallsService(t *testing.T) {
 	if !strings.Contains(stdout.String(), `"columns":["node_id","name","cn_name","path"]`) || !strings.Contains(stdout.String(), `"123"`) {
 		t.Fatalf("expected compact table output, got %s", stdout.String())
 	}
-	if strings.Contains(stdout.String(), `"meta"`) || strings.Contains(stdout.String(), `"ok"`) {
-		t.Fatalf("expected data-only output without envelope fields, got %s", stdout.String())
+	if strings.Contains(stdout.String(), `"ok"`) {
+		t.Fatalf("expected compact output without ok field, got %s", stdout.String())
 	}
 }

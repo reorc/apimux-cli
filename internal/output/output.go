@@ -100,6 +100,26 @@ func (r Renderer) WriteCapabilityResponse(body []byte, output BodyOutput, debug 
 	if err != nil {
 		return err
 	}
+
+	// Extract critical metadata for compact mode
+	metadata := extractCriticalMetadata(env.Meta)
+	if len(metadata) > 0 {
+		// Wrap projected data with metadata
+		var projectedData any
+		if err := json.Unmarshal(projected, &projectedData); err != nil {
+			return err
+		}
+		wrapper := map[string]any{
+			"data": projectedData,
+			"meta": metadata,
+		}
+		wrapped, err := json.Marshal(wrapper)
+		if err != nil {
+			return err
+		}
+		return r.writeJSON(wrapped, output.pretty())
+	}
+
 	return r.writeJSON(projected, output.pretty())
 }
 
@@ -139,4 +159,44 @@ func (r Renderer) WriteLocalError(message string, code string) error {
 		return err
 	}
 	return r.writeJSON(body, false)
+}
+
+// extractCriticalMetadata extracts pagination and partial-failure metadata
+// that agents need to see even in compact mode
+func extractCriticalMetadata(meta map[string]any) map[string]any {
+	if meta == nil {
+		return nil
+	}
+
+	critical := make(map[string]any)
+
+	// Pagination metadata
+	if cursor, ok := meta["cursor"]; ok {
+		critical["cursor"] = cursor
+	}
+	if hasMore, ok := meta["has_more"]; ok {
+		critical["has_more"] = hasMore
+	}
+	if currentPage, ok := meta["current_page"]; ok {
+		critical["current_page"] = currentPage
+	}
+	if nextPage, ok := meta["next_page"]; ok {
+		critical["next_page"] = nextPage
+	}
+	if total, ok := meta["total"]; ok {
+		critical["total"] = total
+	}
+
+	// Partial-failure metadata
+	if partial, ok := meta["partial"]; ok && partial == true {
+		critical["partial"] = partial
+		if subrequestCount, ok := meta["subrequest_count"]; ok {
+			critical["subrequest_count"] = subrequestCount
+		}
+		if subrequests, ok := meta["subrequests"]; ok {
+			critical["subrequests"] = subrequests
+		}
+	}
+
+	return critical
 }

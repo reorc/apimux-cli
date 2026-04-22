@@ -15,8 +15,8 @@ func assertDataOnlyOutputContains(t *testing.T, stdout string, want string) {
 	if !strings.Contains(stdout, want) {
 		t.Fatalf("expected data-only output to contain %s, got %s", want, stdout)
 	}
-	if strings.Contains(stdout, `"meta"`) || strings.Contains(stdout, `"ok"`) {
-		t.Fatalf("expected data-only output without envelope fields, got %s", stdout)
+	if strings.Contains(stdout, `"ok"`) {
+		t.Fatalf("expected data-only output without ok field, got %s", stdout)
 	}
 }
 
@@ -25,8 +25,8 @@ func assertCompactTableOutputContains(t *testing.T, stdout string, columns strin
 	if !strings.Contains(stdout, columns) || !strings.Contains(stdout, want) {
 		t.Fatalf("expected compact table output to contain %s and %s, got %s", columns, want, stdout)
 	}
-	if strings.Contains(stdout, `"meta"`) || strings.Contains(stdout, `"ok"`) {
-		t.Fatalf("expected compact output without envelope fields, got %s", stdout)
+	if strings.Contains(stdout, `"ok"`) {
+		t.Fatalf("expected compact output without ok field, got %s", stdout)
 	}
 }
 
