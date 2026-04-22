@@ -98,8 +98,8 @@ apimux tiktok search_videos --keyword "desk setup" --sort-by "likes" --publish-t
 ### 规则
 
 - `keyword` 必填
-- `sort_by` 只接受 `relevance`、`likes`、`date`
-- `publish_time` 只接受 `all`、`1d`、`1w`、`1m`、`3m`、`6m`
+- `sort_by` canonical 值是 `relevance`、`likes`、`date`；CLI 也兼容 legacy provider 数值 `0/1/2`
+- `publish_time` canonical 值是 `all`、`1d`、`1w`、`1m`、`3m`、`6m`；CLI 也兼容 legacy provider 数值 `0/1/7/30/90/180`
 - `count` 范围 1-35
 - provider 的数值枚举不会暴露到 contract
 - 分页状态放在 `meta.cursor` 和 `meta.has_more`，不是 `data`

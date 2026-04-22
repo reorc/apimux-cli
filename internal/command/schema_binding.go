@@ -23,6 +23,7 @@ type schemaEnvelope struct {
 }
 
 type flagBinding struct {
+	capability  string
 	param       schema.CapabilityParam
 	flagName    string
 	hasDefault  bool
@@ -108,7 +109,7 @@ func parseSchemaBoundParams(args []string, spec schema.CapabilitySchema, command
 
 	bindings := make([]flagBinding, 0, len(spec.Parameters))
 	for _, param := range spec.Parameters {
-		binding, err := registerSchemaFlag(flagSet, param)
+		binding, err := registerSchemaFlag(flagSet, spec.Name, param)
 		if err != nil {
 			return nil, err
 		}
@@ -154,8 +155,9 @@ func parseSchemaBoundParams(args []string, spec schema.CapabilitySchema, command
 	return out, nil
 }
 
-func registerSchemaFlag(flagSet *pflag.FlagSet, param schema.CapabilityParam) (flagBinding, error) {
+func registerSchemaFlag(flagSet *pflag.FlagSet, capability string, param schema.CapabilityParam) (flagBinding, error) {
 	binding := flagBinding{
+		capability: capability,
 		param:      param,
 		flagName:   schemaFlagName(param),
 		hasDefault: param.Default != nil,
@@ -217,6 +219,7 @@ func (b flagBinding) resolve(flagSet *pflag.FlagSet) (any, bool, error) {
 		if value == "" && b.param.Required && !b.hasDefault {
 			return nil, false, nil
 		}
+		value = normalizeCompatStringValue(b.capability, b.param.Name, value)
 		if err := validateEnum(value, b.param); err != nil {
 			return nil, false, err
 		}
@@ -253,8 +256,9 @@ func (b flagBinding) resolve(flagSet *pflag.FlagSet) (any, bool, error) {
 		switch b.param.Encoding {
 		case "", "csv":
 			values := splitCSV(raw)
-			for _, value := range values {
-				if err := validateEnum(value, b.param); err != nil {
+			for i, value := range values {
+				values[i] = normalizeCompatStringValue(b.capability, b.param.Name, value)
+				if err := validateEnum(values[i], b.param); err != nil {
 					return nil, false, err
 				}
 			}
@@ -303,6 +307,51 @@ func validateEnum(value string, param schema.CapabilityParam) error {
 		code:     "cli_invalid_params",
 		message:  fmt.Sprintf("--%s must be one of: %s", schemaFlagName(param), strings.Join(param.Enum, ", ")),
 	}
+}
+
+func normalizeCompatStringValue(capability, paramName, value string) string {
+	if value == "" {
+		return value
+	}
+	if capability == "reddit.search" && paramName == "sort" {
+		return strings.ToLower(value)
+	}
+
+	var aliases map[string]string
+	switch capability {
+	case "douyin.search_videos":
+		switch paramName {
+		case "sort_type":
+			aliases = map[string]string{"0": "comprehensive", "1": "likes", "2": "latest"}
+		case "publish_time":
+			aliases = map[string]string{"0": "all", "1": "1d", "7": "1w", "180": "6m"}
+		}
+	case "tiktok.search_videos":
+		switch paramName {
+		case "sort_by":
+			aliases = map[string]string{"0": "relevance", "1": "likes", "2": "date"}
+		case "publish_time":
+			aliases = map[string]string{"0": "all", "1": "1d", "7": "1w", "30": "1m", "90": "3m", "180": "6m"}
+		}
+	case "xiaohongshu.search_notes":
+		switch paramName {
+		case "sort_strategy":
+			aliases = map[string]string{
+				"general":               "default",
+				"time_descending":       "latest",
+				"popularity_descending": "likes",
+			}
+		case "note_type":
+			aliases = map[string]string{"0": "all", "1": "normal", "2": "video"}
+		}
+	}
+	if aliases == nil {
+		return value
+	}
+	if mapped, ok := aliases[value]; ok {
+		return mapped
+	}
+	return value
 }
 
 func validateSchemaRules(rules []schema.CapabilityRule, provided map[string]bool, params map[string]schema.CapabilityParam, commandPath string) error {

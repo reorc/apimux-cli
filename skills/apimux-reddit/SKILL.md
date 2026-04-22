@@ -75,7 +75,7 @@ search → get_post_detail → get_post_comments
 ### 规则
 
 - `query` 必填
-- 所有枚举参数只接受 lowercase canonical 值
+- `sort` 的 canonical 值是 lowercase；CLI 为兼容历史调用，也接受 legacy uppercase 值并在发送前归一化
 - 分页状态放在 `meta.cursor` / `meta.has_more`
 
 ---

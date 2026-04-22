@@ -70,7 +70,7 @@ search_notes → get_note_detail → get_note_comments
 ### 规则
 
 - `keyword` 必填
-- 枚举参数只接受 English canonical 值，不接受 provider 原始值
+- canonical 枚举值仍是首选；CLI 也兼容 legacy provider 值：`sort_strategy` 的 `general/time_descending/popularity_descending`，以及 `note_type` 的 `0/1/2`
 - 分页走 `page` 参数；返回状态在 `meta.current_page` / `meta.next_page` / `meta.has_more`
 
 ---

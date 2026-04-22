@@ -72,8 +72,9 @@ search_videos → get_video_detail → get_video_comments → get_comment_replie
 ### 规则
 
 - `keyword` 必填
-- 枚举参数只接受 canonical 字符串值，不接受 provider 整数字符串
+- canonical 枚举值仍是首选；CLI 为兼容历史调用，也接受 legacy provider 别名：`sort_type` 的 `0/1/2` 和 `publish_time` 的 `0/1/7/180`
 - 分页状态放在 `meta.cursor` / `meta.has_more`
+- legacy provider 的 `search_id` / `backtrace` 不属于 APIMux contract，也不会作为 CLI 参数暴露
 
 ---
 
