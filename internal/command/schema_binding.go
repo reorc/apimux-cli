@@ -106,6 +106,7 @@ func fetchCapabilitySchema(ctx context.Context, runCtx *runContext, capability s
 func parseSchemaBoundParams(args []string, spec schema.CapabilitySchema, commandPath string) (map[string]any, error) {
 	flagSet := pflag.NewFlagSet(commandPath, pflag.ContinueOnError)
 	flagSet.SetOutput(io.Discard)
+	args = normalizeSchemaBoundArgs(spec.Name, args)
 
 	bindings := make([]flagBinding, 0, len(spec.Parameters))
 	for _, param := range spec.Parameters {
@@ -153,6 +154,26 @@ func parseSchemaBoundParams(args []string, spec schema.CapabilitySchema, command
 	}
 
 	return out, nil
+}
+
+func normalizeSchemaBoundArgs(capability string, args []string) []string {
+	if capability != "amazon.query_aba_keywords" {
+		return args
+	}
+	normalized := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--page-index" {
+			normalized = append(normalized, "--page")
+			continue
+		}
+		if strings.HasPrefix(arg, "--page-index=") {
+			normalized = append(normalized, "--page="+strings.TrimPrefix(arg, "--page-index="))
+			continue
+		}
+		normalized = append(normalized, arg)
+	}
+	return normalized
 }
 
 func registerSchemaFlag(flagSet *pflag.FlagSet, capability string, param schema.CapabilityParam) (flagBinding, error) {

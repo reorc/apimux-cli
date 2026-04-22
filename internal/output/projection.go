@@ -99,7 +99,7 @@ var projectionRules = map[string]projectionRule{
 			Tables: []tableRule{
 				{
 					From:  "$root",
-					To:    "$root",
+					To:    "items",
 					Limit: 50,
 					Columns: []fieldRule{
 						{From: "asin", To: "asin"},
@@ -133,12 +133,12 @@ var projectionRules = map[string]projectionRule{
 			Lists: []listRule{
 				{
 					From:  "$root",
-					To:    "$root",
+					To:    "items",
 					Limit: 20,
 					Fields: []fieldRule{
 						{From: "keyword", To: "keyword"},
-						{From: "est_searches_num_history", To: "est_searches_num_history"},
-						{From: "searches_rank_history", To: "searches_rank_history"},
+						{From: "est_searches_num_history", To: "est_searches_num_history_map"},
+						{From: "searches_rank_history", To: "searches_rank_history_map"},
 					},
 				},
 			},
@@ -153,38 +153,14 @@ var projectionRules = map[string]projectionRule{
 				{From: "price.display", To: "price"},
 				{From: "buybox.availability", To: "availability"},
 				{From: "rating", To: "rating"},
-				{From: "review_count", To: "review_count"},
+				{From: "review_count", To: "reviews"},
+				{From: "product_url", To: "link"},
 				{From: "main_image", To: "main_image"},
-				{From: "images", To: "image_count", Transform: transformCount},
-				{From: "variants", To: "variant_count", Transform: transformCount},
-			},
-			Lists: []listRule{
-				{
-					From:  "feature_bullets",
-					To:    "feature_bullets",
-					Limit: 3,
-				},
-			},
-			Tables: []tableRule{
-				{
-					From:  "images",
-					To:    "images",
-					Limit: 5,
-					Columns: []fieldRule{
-						{From: "variant", To: "variant"},
-						{From: "link", To: "link"},
-					},
-				},
-				{
-					From:  "variants",
-					To:    "variants",
-					Limit: 8,
-					Columns: []fieldRule{
-						{From: "asin", To: "asin"},
-						{From: "title", To: "title"},
-						{From: "dimensions", To: "dimensions", Transform: transformJoinDimensions},
-					},
-				},
+				{From: "feature_bullets", To: "feature_bullets"},
+				{From: "images", To: "images"},
+				{From: "variants", To: "variants"},
+				{From: "buybox.price.display", To: "buybox.price"},
+				{From: "buybox.original_price.display", To: "buybox.original_price"},
 			},
 		},
 	},
@@ -193,16 +169,17 @@ var projectionRules = map[string]projectionRule{
 			Tables: []tableRule{
 				{
 					From:  "$root",
-					To:    "$root",
+					To:    "data",
 					Limit: 20,
 					Columns: []fieldRule{
+						{From: "reviewer_name", To: "consumer_name"},
 						{From: "title", To: "title"},
-						{From: "content", To: "content"},
 						{From: "star", To: "star"},
-						{From: "date", To: "date"},
-						{From: "reviewer_name", To: "reviewer_name"},
-						{From: "is_verified_purchase", To: "is_verified_purchase"},
-						{From: "helpful_votes", To: "helpful_votes"},
+						{From: "date", To: "reviews_date"},
+						{From: "is_verified_purchase", To: "is_vp"},
+						{From: "helpful_votes", To: "helpful"},
+						{From: "content", To: "content"},
+						{From: "reviewed_country", To: "reviewed_country"},
 					},
 				},
 			},
@@ -213,7 +190,7 @@ var projectionRules = map[string]projectionRule{
 			Tables: []tableRule{
 				{
 					From:  "$root",
-					To:    "$root",
+					To:    "items",
 					Limit: 20,
 					Columns: []fieldRule{
 						{From: "node_id", To: "node_id"},
@@ -230,15 +207,165 @@ var projectionRules = map[string]projectionRule{
 			Tables: []tableRule{
 				{
 					From:  "$root",
-					To:    "$root",
+					To:    "items",
 					Limit: 10,
 					Columns: []fieldRule{
-						{From: "position", To: "position"},
 						{From: "asin", To: "asin"},
 						{From: "title", To: "title"},
-						{From: "price.display", To: "price"},
+						{From: "product_url", To: "link"},
+						{From: "main_image", To: "thumbnail"},
 						{From: "rating", To: "rating"},
-						{From: "review_count", To: "review_count"},
+						{From: "review_count", To: "reviews"},
+						{From: "price.display", To: "price"},
+					},
+				},
+			},
+		},
+	},
+	"amazon.list_asin_keywords": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "items",
+					Limit: 100,
+					Columns: []fieldRule{
+						{From: "keyword", To: "keyword"},
+						{From: "kw_characters", To: "kw_characters"},
+						{From: "conversion_characters", To: "conversion_characters"},
+						{From: "exposure_type", To: "exposure_type"},
+						{From: "last_rank", To: "last_rank_str"},
+						{From: "ad_last_rank", To: "ad_last_rank_str"},
+						{From: "est_searches_num", To: "est_searches_num"},
+						{From: "searches_rank", To: "searches_rank"},
+						{From: "ratio_score", To: "ratio_score"},
+					},
+				},
+			},
+		},
+	},
+	"amazon.query_aba_keywords": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "items",
+					Limit: 100,
+					Columns: []fieldRule{
+						{From: "keyword", To: "keyword"},
+						{From: "keyword_cn_name", To: "keyword_cn_name"},
+						{From: "rank", To: "rank"},
+						{From: "search_volume", To: "search_volume"},
+						{From: "word_count", To: "word_count"},
+						{From: "product_count", To: "product_count"},
+						{From: "rank_change_of_weekly", To: "rank_change_of_weekly"},
+						{From: "cpc", To: "cpc"},
+						{From: "cpc_range", To: "cpc_range"},
+						{From: "search_conversion_rate", To: "search_conversion_rate"},
+						{From: "search_conversion_rate_d90", To: "search_conversion_rate_d90"},
+						{From: "click_conversion_rate_d90", To: "click_conversion_rate_d90"},
+						{From: "click_of_90d", To: "click_of_90d"},
+						{From: "sales_volume_of_90d", To: "sales_volume_of_90d"},
+						{From: "share_click_rate", To: "share_click_rate"},
+						{From: "share_conversion_rate", To: "share_conversion_rate"},
+						{From: "search_volume_growth_rate_trend", To: "search_volume_growth_rate_trend"},
+						{From: "top3_asin", To: "top3_asin"},
+						{From: "top3_brand", To: "top3_brand"},
+						{From: "top3_category", To: "top3_category"},
+						{From: "season", To: "season"},
+						{From: "update", To: "update"},
+					},
+				},
+			},
+		},
+	},
+	"amazon.get_asin_sales_daily_trend": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "items",
+					Limit: 180,
+					Columns: []fieldRule{
+						{From: "date", To: "date"},
+						{From: "sales", To: "sales"},
+					},
+				},
+			},
+		},
+	},
+	"amazon.get_variant_sales_30d": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "items",
+					Limit: 100,
+					Columns: []fieldRule{
+						{From: "asin", To: "asin"},
+						{From: "bought_in_past_month", To: "bought_in_past_month"},
+						{From: "update_time", To: "update_time"},
+					},
+				},
+			},
+		},
+	},
+	"amazon.get_category_best_sellers": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "products",
+					Limit: 100,
+					Columns: []fieldRule{
+						{From: "listing_sales_volume_of_daily", To: "listing_sales_volume_of_daily"},
+						{From: "listing_sales_volume_of_month", To: "listing_sales_volume_of_month"},
+						{From: "listing_sales_of_daily", To: "listing_sales_of_daily"},
+						{From: "listing_sales_of_month", To: "listing_sales_of_month"},
+						{From: "asin", To: "asin"},
+						{From: "title", To: "title"},
+						{From: "brand", To: "brand"},
+						{From: "photo", To: "photo"},
+						{From: "price", To: "price"},
+						{From: "list_price", To: "list_price"},
+						{From: "sales_price", To: "sales_price"},
+						{From: "coupon", To: "coupon"},
+						{From: "seller_count", To: "seller_count"},
+						{From: "is_fba", To: "is_fba"},
+						{From: "profit", To: "profit"},
+						{From: "profit_rate", To: "profit_rate"},
+						{From: "online_days", To: "online_days"},
+						{From: "rating_count", To: "ratings_count"},
+						{From: "rating", To: "ratings"},
+						{From: "rank", To: "rank"},
+						{From: "category", To: "category"},
+					},
+				},
+			},
+		},
+	},
+	"amazon.get_category_trend": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "items",
+					Limit: 120,
+					Columns: []fieldRule{
+						{From: "month", To: "month"},
+						{From: "sales_volume", To: "sales_volume"},
+						{From: "brand_count", To: "brand_count"},
+						{From: "seller_count", To: "seller_count"},
+						{From: "avg_price", To: "avg_price"},
+						{From: "avg_rating_count", To: "avg_rating_count"},
+						{From: "avg_star", To: "avg_star"},
+						{From: "new_product_ratio_1m", To: "new_product_ratio_1m"},
+						{From: "new_product_ratio_3m", To: "new_product_ratio_3m"},
+						{From: "amazon_self_ratio", To: "amazon_self_ratio"},
+						{From: "avg_profit", To: "avg_profit"},
+						{From: "top100_share", To: "top100_share"},
+						{From: "top3_listing_monopoly", To: "top3_listing_monopoly"},
+						{From: "top10_brand_monopoly", To: "top10_brand_monopoly"},
 					},
 				},
 			},
@@ -659,6 +786,27 @@ func ParseFormat(value string) (Format, bool) {
 	}
 }
 
+func projectCapabilityWithMeta(capability string, data json.RawMessage, meta map[string]any, format Format) ([]byte, bool, error) {
+	if format == FormatData {
+		return nil, false, nil
+	}
+
+	switch capability {
+	case "amazon.get_asin_sales_daily_trend":
+		return projectAmazonASINSalesDailyTrend(data, meta)
+	case "amazon.get_asins_sales_history":
+		return projectAmazonASINSalesHistory(data, meta)
+	case "amazon.get_variant_sales_30d":
+		return projectAmazonVariantSales30d(data, meta)
+	case "amazon.search_category":
+		return projectAmazonSearchCategory(data)
+	case "amazon.get_category_trend":
+		return projectAmazonCategoryTrend(data, meta)
+	default:
+		return nil, false, nil
+	}
+}
+
 func projectCapability(capability string, data json.RawMessage, format Format) ([]byte, error) {
 	if format == FormatData {
 		return data, nil
@@ -903,6 +1051,149 @@ func boundedLimit(length int, limit int) int {
 
 func getRoot(value any) any {
 	return value
+}
+
+func projectAmazonASINSalesDailyTrend(data json.RawMessage, meta map[string]any) ([]byte, bool, error) {
+	projected, err := projectCapability("amazon.get_asin_sales_daily_trend", data, FormatCompact)
+	if err != nil {
+		return nil, false, err
+	}
+	var items any
+	if err := json.Unmarshal(projected, &items); err != nil {
+		return nil, false, err
+	}
+	out := map[string]any{
+		"items": items.(map[string]any)["items"],
+	}
+	if asin, ok := meta["asin"]; ok {
+		out["asin"] = asin
+	}
+	body, err := json.Marshal(out)
+	return body, true, err
+}
+
+func projectAmazonASINSalesHistory(data json.RawMessage, meta map[string]any) ([]byte, bool, error) {
+	projected, err := projectCapability("amazon.get_asins_sales_history", data, FormatCompact)
+	if err != nil {
+		return nil, false, err
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(projected, &payload); err != nil {
+		return nil, false, err
+	}
+	out := map[string]any{
+		"items": payload["items"],
+	}
+	if queried, ok := meta["queried_asins"]; ok {
+		out["queried_asins"] = queried
+	}
+	if withoutHistory, ok := meta["asins_without_history"]; ok {
+		out["asins_without_history"] = withoutHistory
+	}
+	body, err := json.Marshal(out)
+	return body, true, err
+}
+
+func projectAmazonVariantSales30d(data json.RawMessage, meta map[string]any) ([]byte, bool, error) {
+	projected, err := projectCapability("amazon.get_variant_sales_30d", data, FormatCompact)
+	if err != nil {
+		return nil, false, err
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(projected, &payload); err != nil {
+		return nil, false, err
+	}
+	out := map[string]any{
+		"items": payload["items"],
+	}
+	if queried, ok := meta["queried_asin"]; ok {
+		out["queried_asin"] = queried
+	}
+	body, err := json.Marshal(out)
+	return body, true, err
+}
+
+func projectAmazonSearchCategory(data json.RawMessage) ([]byte, bool, error) {
+	projected, err := projectCapability("amazon.search_category", data, FormatCompact)
+	if err != nil {
+		return nil, false, err
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(projected, &payload); err != nil {
+		return nil, false, err
+	}
+	body, err := json.Marshal(map[string]any{
+		"items": payload["items"],
+	})
+	return body, true, err
+}
+
+func projectAmazonCategoryTrend(data json.RawMessage, meta map[string]any) ([]byte, bool, error) {
+	var rows []map[string]any
+	if err := json.Unmarshal(data, &rows); err != nil {
+		return nil, false, err
+	}
+
+	metrics := extractStringList(meta, "metrics")
+	columns := []string{"month"}
+	seen := map[string]bool{"month": true}
+	for _, metric := range metrics {
+		if metric == "" || seen[metric] {
+			continue
+		}
+		seen[metric] = true
+		columns = append(columns, metric)
+	}
+	if len(columns) == 1 {
+		for _, fallback := range projectionRules["amazon.get_category_trend"].Compact.Tables[0].Columns {
+			if fallback.To == "month" || seen[fallback.To] {
+				continue
+			}
+			seen[fallback.To] = true
+			columns = append(columns, fallback.To)
+		}
+	}
+
+	tableRows := make([][]any, 0, len(rows))
+	for _, row := range rows {
+		record := make([]any, 0, len(columns))
+		for _, column := range columns {
+			record = append(record, row[column])
+		}
+		tableRows = append(tableRows, record)
+	}
+
+	body, err := json.Marshal(map[string]any{
+		"items": map[string]any{
+			"columns": columns,
+			"rows":    tableRows,
+		},
+	})
+	return body, true, err
+}
+
+func extractStringList(meta map[string]any, key string) []string {
+	if meta == nil {
+		return nil
+	}
+	raw, ok := meta[key]
+	if !ok {
+		return nil
+	}
+	items, ok := raw.([]any)
+	if !ok {
+		if typed, ok := raw.([]string); ok {
+			return append([]string(nil), typed...)
+		}
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if text, ok := item.(string); ok && strings.TrimSpace(text) != "" {
+			out = append(out, text)
+		}
+	}
+	return out
 }
 
 func toString(value any) string {

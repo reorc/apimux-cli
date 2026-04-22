@@ -32,14 +32,15 @@ func TestProjectCapabilityCompactAmazonGetProduct(t *testing.T) {
 	payload := json.RawMessage(`{
 		"asin":"B001",
 		"title":"Desk Lamp",
+		"product_url":"https://example.com/product",
 		"brand_store":{"text":"Acme"},
 		"price":{"display":"$19.99"},
-		"buybox":{"availability":"In Stock"},
+		"buybox":{"availability":"In Stock","price":{"display":"$19.99"},"original_price":{"display":"$24.99"}},
 		"rating":4.5,
 		"review_count":123,
 		"main_image":"https://example.com/main.jpg",
 		"images":[{"variant":"MAIN","link":"a"},{"variant":"PT01","link":"b"}],
-		"variants":[{"asin":"B001-A"},{"asin":"B001-B"}],
+		"variants":[{"asin":"B001-A","title":"Black","dimensions":[{"name":"Color","value":"Black"}]},{"asin":"B001-B","title":"White"}],
 		"feature_bullets":["one","two","three","four"]
 	}`)
 
@@ -52,22 +53,24 @@ func TestProjectCapabilityCompactAmazonGetProduct(t *testing.T) {
 	if err := json.Unmarshal(body, &got); err != nil {
 		t.Fatalf("unmarshal compact projection: %v", err)
 	}
-	if got["brand"] != "Acme" || got["image_count"] != float64(2) || got["variant_count"] != float64(2) {
+	if got["brand"] != "Acme" || got["reviews"] != float64(123) || got["link"] != "https://example.com/product" {
 		t.Fatalf("unexpected compact projection: %#v", got)
 	}
 	bullets, _ := got["feature_bullets"].([]any)
-	if len(bullets) != 3 {
-		t.Fatalf("expected first 3 bullets, got %#v", got["feature_bullets"])
+	if len(bullets) != 4 {
+		t.Fatalf("expected full bullets, got %#v", got["feature_bullets"])
 	}
-	if _, exists := got["images"]; !exists {
-		t.Fatalf("expected compact projection to include embedded images table, got %#v", got)
+	images, _ := got["images"].([]any)
+	variants, _ := got["variants"].([]any)
+	if len(images) != 2 || len(variants) != 2 {
+		t.Fatalf("expected nested arrays to stay uncolumnar, got %#v", got)
 	}
 }
 
 func TestProjectCapabilityCompactSearchProducts(t *testing.T) {
 	payload := json.RawMessage(`[
-		{"position":1,"asin":"A1","title":"Desk Lamp","price":{"display":"$19.99"},"rating":4.5,"review_count":10},
-		{"position":2,"asin":"A2","title":"Floor Lamp","price":{"display":"$29.99"},"rating":4.7,"review_count":20}
+		{"position":1,"asin":"A1","title":"Desk Lamp","product_url":"https://example.com/a1","main_image":"https://example.com/a1.jpg","price":{"display":"$19.99"},"rating":4.5,"review_count":10},
+		{"position":2,"asin":"A2","title":"Floor Lamp","product_url":"https://example.com/a2","main_image":"https://example.com/a2.jpg","price":{"display":"$29.99"},"rating":4.7,"review_count":20}
 	]`)
 
 	body, err := projectCapability("amazon.search_products", payload, FormatCompact)
@@ -76,17 +79,95 @@ func TestProjectCapabilityCompactSearchProducts(t *testing.T) {
 	}
 
 	var got struct {
-		Columns []string `json:"columns"`
-		Rows    [][]any  `json:"rows"`
+		Items struct {
+			Columns []string `json:"columns"`
+			Rows    [][]any  `json:"rows"`
+		} `json:"items"`
 	}
 	if err := json.Unmarshal(body, &got); err != nil {
 		t.Fatalf("unmarshal compact projection: %v", err)
 	}
-	if len(got.Columns) != 6 || len(got.Rows) != 2 {
+	if len(got.Items.Columns) != 7 || len(got.Items.Rows) != 2 {
 		t.Fatalf("unexpected table projection: %#v", got)
 	}
-	if got.Columns[0] != "position" || got.Columns[3] != "price" {
-		t.Fatalf("unexpected columns: %#v", got.Columns)
+	if got.Items.Columns[0] != "asin" || got.Items.Columns[2] != "link" || got.Items.Columns[6] != "price" {
+		t.Fatalf("unexpected columns: %#v", got.Items.Columns)
+	}
+}
+
+func TestProjectCapabilityCompactAmazonSpecialShapes(t *testing.T) {
+	tests := []struct {
+		name       string
+		capability string
+		payload    json.RawMessage
+		want       string
+	}{
+		{
+			name:       "asin sales history wraps items",
+			capability: "amazon.get_asins_sales_history",
+			payload:    json.RawMessage(`[{"asin":"A1","month":"2026-01","sales":12}]`),
+			want:       `"items":{"columns":["asin","month","sales"]`,
+		},
+		{
+			name:       "category best sellers uses products table",
+			capability: "amazon.get_category_best_sellers",
+			payload:    json.RawMessage(`[{"asin":"A1","title":"Desk Lamp","brand":"Acme"}]`),
+			want:       `"products":{"columns":["listing_sales_volume_of_daily"`,
+		},
+		{
+			name:       "product reviews uses data table",
+			capability: "amazon.get_product_reviews",
+			payload:    json.RawMessage(`[{"reviewer_name":"Alice","star":4,"title":"Great","date":"2026-04-01","is_verified_purchase":true,"helpful_votes":2,"content":"Solid","reviewed_country":"US"}]`),
+			want:       `"data":{"columns":["consumer_name","title","star","reviews_date","is_vp","helpful","content","reviewed_country"]`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body, err := projectCapability(tt.capability, tt.payload, FormatCompact)
+			if err != nil {
+				t.Fatalf("projectCapability() error = %v", err)
+			}
+			if !strings.Contains(string(body), tt.want) {
+				t.Fatalf("unexpected compact projection: %s", string(body))
+			}
+		})
+	}
+}
+
+func TestProjectCapabilityWithMetaAmazonGetCategoryTrendFiltersRequestedMetrics(t *testing.T) {
+	payload := json.RawMessage(`[
+		{"month":"2026-01","sales_volume":1200,"brand_count":15,"seller_count":8},
+		{"month":"2026-02","sales_volume":1350,"brand_count":18,"seller_count":9}
+	]`)
+
+	body, ok, err := projectCapabilityWithMeta("amazon.get_category_trend", payload, map[string]any{
+		"metrics": []any{"sales_volume", "brand_count"},
+	}, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapabilityWithMeta() error = %v", err)
+	}
+	if !ok {
+		t.Fatal("expected custom meta projection")
+	}
+
+	var got struct {
+		Items struct {
+			Columns []string `json:"columns"`
+			Rows    [][]any  `json:"rows"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	if len(got.Items.Columns) != 3 {
+		t.Fatalf("expected month + requested metrics only, got %#v", got.Items.Columns)
+	}
+	if got.Items.Columns[0] != "month" || got.Items.Columns[1] != "sales_volume" || got.Items.Columns[2] != "brand_count" {
+		t.Fatalf("unexpected columns: %#v", got.Items.Columns)
+	}
+	if len(got.Items.Rows) != 2 || len(got.Items.Rows[0]) != 3 {
+		t.Fatalf("unexpected rows: %#v", got.Items.Rows)
 	}
 }
 
@@ -274,6 +355,12 @@ func TestProjectionRulesCoverAllAgentTestCapabilities(t *testing.T) {
 		"amazon.expand_keywords",
 		"amazon.get_product_reviews",
 		"amazon.get_keyword_trends",
+		"amazon.list_asin_keywords",
+		"amazon.query_aba_keywords",
+		"amazon.get_asin_sales_daily_trend",
+		"amazon.get_variant_sales_30d",
+		"amazon.get_category_best_sellers",
+		"amazon.get_category_trend",
 		"google_trends.get_interest_over_time",
 		"reddit.get_post_detail",
 		"reddit.get_post_comments",

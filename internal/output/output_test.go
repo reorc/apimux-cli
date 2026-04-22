@@ -15,8 +15,8 @@ func TestWriteCapabilityResponseJSONModeWritesDataOnlyWithNewline(t *testing.T) 
 	}
 
 	got := stdout.String()
-	if !bytes.Contains([]byte(got), []byte(`"images":{"columns":["variant","link"]`)) || !bytes.Contains([]byte(got), []byte(`"variants":{"columns":["asin","title","dimensions"]`)) {
-		t.Fatalf("expected compact output with embedded tables, got %q", got)
+	if !bytes.Contains([]byte(got), []byte(`"images":[{"link":"a"},{"link":"b"}]`)) || !bytes.Contains([]byte(got), []byte(`"variants":[{"asin":"A"},{"asin":"B"}]`)) {
+		t.Fatalf("expected compact output with nested arrays intact, got %q", got)
 	}
 }
 
@@ -149,11 +149,9 @@ func TestWriteCapabilityResponseCompactModeExposesPartialFailureMetadata(t *test
 
 	input := `{
 		"ok": true,
-		"data": {
-			"sales_volume": 1000,
-			"brand_count": 50,
-			"avg_price": null
-		},
+		"data": [
+			{"month":"2026-01","sales_volume":1000,"brand_count":50,"avg_price":null}
+		],
 		"meta": {
 			"capability": "amazon.get_category_trend",
 			"partial": true,
@@ -175,9 +173,13 @@ func TestWriteCapabilityResponseCompactModeExposesPartialFailureMetadata(t *test
 		t.Fatalf("unmarshal compact output: %v", err)
 	}
 
-	// Verify data is present
-	if _, ok := got["data"]; !ok {
-		t.Fatalf("expected data field in compact output, got %#v", got)
+	// Verify projected data is present
+	data, ok := got["data"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected wrapped data field in compact output, got %#v", got)
+	}
+	if _, ok := data["items"]; !ok {
+		t.Fatalf("expected projected items field in compact output, got %#v", got)
 	}
 
 	// Verify partial-failure metadata is exposed
@@ -223,5 +225,37 @@ func TestWriteCapabilityResponseCompactModeWithoutMetadataOmitsMeta(t *testing.T
 	}
 	if _, ok := got["data"]; ok {
 		t.Fatalf("expected unwrapped data when no critical metadata present, got %#v", got)
+	}
+}
+
+func TestWriteCapabilityResponseCompactAmazonGetCategoryTrendUsesRequestedMetrics(t *testing.T) {
+	var stdout bytes.Buffer
+	renderer := Renderer{Stdout: &stdout}
+
+	input := `{
+		"ok": true,
+		"data": [{"month":"2026-01","sales_volume":1200,"brand_count":15,"seller_count":8}],
+		"meta": {
+			"capability": "amazon.get_category_trend",
+			"metrics": ["sales_volume", "brand_count"]
+		}
+	}`
+
+	if err := renderer.WriteCapabilityResponse([]byte(input), BodyOutputCompact, false); err != nil {
+		t.Fatalf("WriteCapabilityResponse() error = %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("unmarshal compact output: %v", err)
+	}
+
+	items, ok := got["items"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected items table, got %#v", got)
+	}
+	columns, _ := items["columns"].([]any)
+	if len(columns) != 3 || columns[0] != "month" || columns[1] != "sales_volume" || columns[2] != "brand_count" {
+		t.Fatalf("unexpected compact category trend columns: %#v", columns)
 	}
 }

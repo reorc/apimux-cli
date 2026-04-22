@@ -43,6 +43,14 @@ func TestParseSchemaBoundParamsAppliesCompatAliases(t *testing.T) {
 			wantValue:   "likes",
 			commandPath: "apimux xiaohongshu search_notes",
 		},
+		{
+			name:        "amazon query aba keywords accepts page-index alias",
+			capability:  "amazon.query_aba_keywords",
+			args:        []string{"--page-index", "3"},
+			wantParam:   "page",
+			wantValue:   3,
+			commandPath: "apimux amazon query_aba_keywords",
+		},
 	}
 
 	for _, tt := range tests {

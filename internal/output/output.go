@@ -96,6 +96,26 @@ func (r Renderer) WriteCapabilityResponse(body []byte, output BodyOutput, debug 
 	}
 
 	capability, _ := env.Meta["capability"].(string)
+	if custom, ok, err := projectCapabilityWithMeta(capability, env.Data, env.Meta, output.projectionFormat()); err != nil {
+		return err
+	} else if ok {
+		metadata := extractCriticalMetadata(env.Meta)
+		if len(metadata) > 0 {
+			var projectedData any
+			if err := json.Unmarshal(custom, &projectedData); err != nil {
+				return err
+			}
+			wrapped, err := json.Marshal(map[string]any{
+				"data": projectedData,
+				"meta": metadata,
+			})
+			if err != nil {
+				return err
+			}
+			return r.writeJSON(wrapped, output.pretty())
+		}
+		return r.writeJSON(custom, output.pretty())
+	}
 	projected, err := projectCapability(capability, env.Data, output.projectionFormat())
 	if err != nil {
 		return err
@@ -169,21 +189,22 @@ func extractCriticalMetadata(meta map[string]any) map[string]any {
 	}
 
 	critical := make(map[string]any)
+	capability, _ := meta["capability"].(string)
 
 	// Pagination metadata
 	if cursor, ok := meta["cursor"]; ok {
 		critical["cursor"] = cursor
 	}
-	if hasMore, ok := meta["has_more"]; ok {
+	if hasMore, ok := meta["has_more"]; ok && !suppressAmazonCompactMeta(capability) {
 		critical["has_more"] = hasMore
 	}
-	if currentPage, ok := meta["current_page"]; ok {
+	if currentPage, ok := meta["current_page"]; ok && !suppressAmazonCompactMeta(capability) {
 		critical["current_page"] = currentPage
 	}
 	if nextPage, ok := meta["next_page"]; ok {
 		critical["next_page"] = nextPage
 	}
-	if total, ok := meta["total"]; ok {
+	if total, ok := meta["total"]; ok && !suppressAmazonCompactMeta(capability) {
 		critical["total"] = total
 	}
 
@@ -199,4 +220,20 @@ func extractCriticalMetadata(meta map[string]any) map[string]any {
 	}
 
 	return critical
+}
+
+func suppressAmazonCompactMeta(capability string) bool {
+	switch capability {
+	case "amazon.search_category",
+		"amazon.list_asin_keywords",
+		"amazon.query_aba_keywords",
+		"amazon.get_asin_sales_daily_trend",
+		"amazon.get_asins_sales_history",
+		"amazon.get_variant_sales_30d",
+		"amazon.get_product_reviews",
+		"amazon.get_category_trend":
+		return true
+	default:
+		return false
+	}
 }
