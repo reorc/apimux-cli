@@ -51,11 +51,11 @@ search_videos → get_video_detail → get_video_comments → get_comment_replie
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `keyword` | string | 是 | 搜索关键词 |
-| `sort_type` | string | 否 | `comprehensive`、`likes`、`latest` |
-| `publish_time` | string | 否 | `all`、`1d`、`1w`、`6m` |
-| `filter_duration` | string | 否 | `all`、`under_1m`、`1m_5m`、`over_5m` |
-| `content_type` | string | 否 | `all`、`video`、`image`、`article` |
-| `cursor` | integer | 否 | 分页 cursor |
+| `sort_type` | string | 否 | `comprehensive`、`likes`、`latest`；不传则由 provider 决定 |
+| `publish_time` | string | 否 | `all`、`1d`、`1w`、`6m`；默认 `all` |
+| `filter_duration` | string | 否 | `all`、`under_1m`、`1m_5m`、`over_5m`；默认 `all` |
+| `content_type` | string | 否 | `all`、`video`、`image`、`article`；默认 `all` |
+| `cursor` | integer | 否 | 分页 cursor，首页不传 |
 
 ### 返回字段
 
@@ -116,8 +116,8 @@ search_videos → get_video_detail → get_video_comments → get_comment_replie
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `aweme_id` | string | 是 | 数字字符串形式的视频 ID |
-| `cursor` | integer | 否 | 评论分页 cursor |
-| `count` | integer | 否 | 评论页大小 |
+| `cursor` | integer | 否 | 评论分页 cursor，首页不传 |
+| `count` | integer | 否 | 评论页大小；默认 20 |
 
 ### 返回字段
 
@@ -148,8 +148,8 @@ search_videos → get_video_detail → get_video_comments → get_comment_replie
 |------|------|------|------|
 | `aweme_id` | string | 是 | 数字字符串形式的视频 ID |
 | `comment_id` | string | 是 | 父评论 ID |
-| `cursor` | integer | 否 | 回复分页 cursor |
-| `count` | integer | 否 | 回复页大小 |
+| `cursor` | integer | 否 | 回复分页 cursor，首页不传 |
+| `count` | integer | 否 | 回复页大小；默认 20 |
 
 ### 返回字段
 

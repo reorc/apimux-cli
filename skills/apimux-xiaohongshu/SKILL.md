@@ -48,10 +48,10 @@ search_notes → get_note_detail → get_note_comments
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `keyword` | string | 是 | 搜索关键词 |
-| `page` | integer | 否 | 页码，从 1 开始 |
-| `note_type` | string | 否 | `all`、`video`、`normal`、`live` |
-| `time_filter` | string | 否 | `all`、`1d`、`1w`、`6m` |
-| `sort_strategy` | string | 否 | `default`、`latest`、`likes` |
+| `page` | integer | 否 | 页码，从 1 开始；默认 1 |
+| `note_type` | string | 否 | `all`、`video`、`normal`、`live`；默认 `all` |
+| `time_filter` | string | 否 | `all`、`1d`、`1w`、`6m`；默认 `all` |
+| `sort_strategy` | string | 否 | `default`、`latest`、`likes`；默认 `default` |
 
 ### 返回字段
 
@@ -126,8 +126,8 @@ search_notes → get_note_detail → get_note_comments
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `note_id` | string | 是 | 24-char hex 笔记 ID |
-| `cursor` | string | 否 | 评论分页 cursor |
-| `sort_strategy` | string | 否 | `default`、`latest`、`likes` |
+| `cursor` | string | 否 | 评论分页 cursor，首页不传 |
+| `sort_strategy` | string | 否 | `default`、`latest`、`likes`；默认 `default` |
 
 ### 返回字段
 

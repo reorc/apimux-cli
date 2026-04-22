@@ -48,9 +48,9 @@ search_advertisers → list_ad_creatives → get_ad_details
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `query` | string | 是 | 搜索关键词 |
-| `region` | string | 否 | ISO alpha-2 国家码 |
-| `num_advertisers` | integer | 否 | 广告主数量，1-100 |
-| `num_domains` | integer | 否 | 域名数量，1-100 |
+| `region` | string | 否 | ISO alpha-2 国家码；不传则不限地区 |
+| `num_advertisers` | integer | 否 | 广告主数量，1-100；默认 10 |
+| `num_domains` | integer | 否 | 域名数量，1-100；默认 10 |
 
 ### 返回字段
 
@@ -77,11 +77,11 @@ search_advertisers → list_ad_creatives → get_ad_details
 |------|------|------|------|
 | `advertiser_id` | string | 否 | 广告主 ID，必须以 `AR` 开头 |
 | `domain` | string | 否 | 广告主域名 |
-| `region` | string | 否 | ISO alpha-2 国家码 |
-| `platform` | string | 否 | `google_play`、`google_maps`、`google_search`、`youtube`、`google_shopping` |
-| `ad_format` | string | 否 | `text`、`image`、`video` |
-| `time_period` | string | 否 | `last_7_days`、`last_30_days`、`last_90_days`、`last_year` |
-| `page_token` | string | 否 | 分页 token |
+| `region` | string | 否 | ISO alpha-2 国家码；不传则不限地区 |
+| `platform` | string | 否 | `google_play`、`google_maps`、`google_search`、`youtube`、`google_shopping`；不传则不限平台 |
+| `ad_format` | string | 否 | `text`、`image`、`video`；不传则不限格式 |
+| `time_period` | string | 否 | `last_7_days`、`last_30_days`、`last_90_days`、`last_year`；不传则不限时间 |
+| `page_token` | string | 否 | 分页 token，首页不传 |
 
 ### 返回字段
 

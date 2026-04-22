@@ -593,8 +593,8 @@ apimux amazon search_products --q "wireless earbuds" --market "US" --page 2
 | `asin` | string | 是 | Amazon 商品 ASIN，10 位大写字母数字 |
 | `market` | string | 是 | 目标市场（不含 JP）：`US`, `UK`, `DE`, `FR`, `IN`, `CA`, `ES`, `IT`, `MX`, `AE`, `AU`, `BR`, `SA` |
 | `start_date` | string | 否 | 评论起始日期，ISO 格式 `YYYY-MM-DD` |
-| `star` | string | 否 | `positive`（4-5 星）或 `negative`（1-3 星） |
-| `only_purchase` | boolean | 否 | `true` 只返回验证购买评论 |
+| `star` | string | 否 | `positive`（4-5 星）或 `negative`（1-3 星）；不传则返回全部评论 |
+| `only_purchase` | boolean | 否 | `true` 只返回验证购买评论；默认 `false` |
 | `page_index` | integer | 否 | 页码，默认 1，上限 10 |
 
 ### CLI 用法

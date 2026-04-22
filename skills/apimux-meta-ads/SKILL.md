@@ -47,14 +47,14 @@ search_ads → get_ad_detail
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `q` | string | 是 | 搜索关键词 |
-| `country` | string | 否 | ISO alpha-2 国家码 |
-| `ad_type` | string | 否 | `all`、`political_and_issue_ads`、`housing_ads`、`employment_ads`、`credit_ads` |
-| `active_status` | string | 否 | `active`、`inactive`、`all` |
-| `media_type` | string | 否 | `all`、`video`、`image`、`meme`、`image_and_meme`、`none` |
-| `platforms` | string | 否 | 逗号分隔平台名：`facebook,instagram` 等 |
-| `start_date` | string | 否 | 开始日期，`YYYY-MM-DD` |
-| `end_date` | string | 否 | 结束日期，`YYYY-MM-DD` |
-| `next_page_token` | string | 否 | 分页 token |
+| `country` | string | 否 | ISO alpha-2 国家码；不传则不限地区 |
+| `ad_type` | string | 否 | `all`、`political_and_issue_ads`、`housing_ads`、`employment_ads`、`credit_ads`；默认 `all` |
+| `active_status` | string | 否 | `active`、`inactive`、`all`；默认 `all` |
+| `media_type` | string | 否 | `all`、`video`、`image`、`meme`、`image_and_meme`、`none`；默认 `all` |
+| `platforms` | string | 否 | 逗号分隔平台名：`facebook,instagram` 等；不传则不限平台 |
+| `start_date` | string | 否 | 开始日期，`YYYY-MM-DD`；不传则不限起始时间 |
+| `end_date` | string | 否 | 结束日期，`YYYY-MM-DD`；不传则不限截止时间 |
+| `next_page_token` | string | 否 | 分页 token，首页不传 |
 
 ### CLI 用法
 

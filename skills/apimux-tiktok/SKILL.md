@@ -63,10 +63,10 @@ google_trends.get_interest_over_time → search_videos → amazon.search_product
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `keyword` | string | 是 | 搜索关键词 |
-| `region` | string | 否 | 地区代码，ISO 两位国家码 |
-| `sort_by` | string | 否 | `relevance`、`likes`、`date` |
-| `publish_time` | string | 否 | `all`、`1d`、`1w`、`1m`、`3m`、`6m` |
-| `cursor` | integer | 否 | 分页 cursor |
+| `region` | string | 否 | 地区代码，ISO 两位国家码；不传则不限地区 |
+| `sort_by` | string | 否 | `relevance`、`likes`、`date`；不传则由 provider 决定 |
+| `publish_time` | string | 否 | `all`、`1d`、`1w`、`1m`、`3m`、`6m`；默认 `all` |
+| `cursor` | integer | 否 | 分页 cursor，首页不传 |
 | `count` | integer | 否 | 返回数量，范围 1-35 |
 
 ### CLI 用法
@@ -115,7 +115,7 @@ apimux tiktok search_videos --keyword "desk setup" --sort-by "likes" --publish-t
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `video_id` | string | 是 | 视频 ID，必须是纯数字字符串 |
-| `cursor` | integer | 否 | 分页 cursor |
+| `cursor` | integer | 否 | 分页 cursor，首页不传 |
 | `count` | integer | 否 | 返回数量，范围 1-50 |
 
 ### CLI 用法
@@ -157,7 +157,7 @@ apimux tiktok list_comments --video-id "7489123456789012345" --count 20
 |------|------|------|------|
 | `seller_id` | string | 是 | TikTok Shop 卖家 ID |
 | `region` | string | 否 | 仅支持 `US`，默认 `US` |
-| `sort` | string | 否 | `sale` 或 `rec` |
+| `sort` | string | 否 | `sale` 或 `rec`；默认 `rec` |
 | `top_n` | integer | 否 | 返回商品数量，范围 1-200，默认 20 |
 
 ### CLI 用法

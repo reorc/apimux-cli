@@ -50,10 +50,10 @@ search → get_post_detail → get_post_comments
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `query` | string | 是 | 搜索关键词 |
-| `search_type` | string | 否 | `post`、`community`、`comment`、`media`、`people` |
-| `sort` | string | 否 | `relevance`、`hot`、`top`、`new`、`comments` |
-| `time_range` | string | 否 | `all`、`year`、`month`、`week`、`day`、`hour` |
-| `after` | string | 否 | 分页 cursor |
+| `search_type` | string | 否 | `post`、`community`、`comment`、`media`、`people`；默认 `post` |
+| `sort` | string | 否 | `relevance`、`hot`、`top`、`new`、`comments`；不传则由 provider 决定 |
+| `time_range` | string | 否 | `all`、`year`、`month`、`week`、`day`、`hour`；默认 `all` |
+| `after` | string | 否 | 分页 cursor，首页不传 |
 
 ### 返回字段
 
@@ -89,8 +89,8 @@ search → get_post_detail → get_post_comments
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `subreddit_name` | string | 是 | 不带 `r/` 前缀的 subreddit 名称 |
-| `sort` | string | 否 | `best`、`hot`、`new`、`top`、`controversial`、`rising` |
-| `after` | string | 否 | 分页 cursor |
+| `sort` | string | 否 | `best`、`hot`、`new`、`top`、`controversial`、`rising`；不传则由 provider 决定 |
+| `after` | string | 否 | 分页 cursor，首页不传 |
 
 ### 返回字段
 
@@ -161,8 +161,8 @@ search → get_post_detail → get_post_comments
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `post_id` | string | 是 | `t3_xxxxx` 形式的帖子 ID |
-| `sort_type` | string | 否 | `confidence`、`new`、`top`、`hot`、`controversial`、`old`、`random` |
-| `after` | string | 否 | 分页 cursor |
+| `sort_type` | string | 否 | `confidence`、`new`、`top`、`hot`、`controversial`、`old`、`random`；不传则由 provider 决定 |
+| `after` | string | 否 | 分页 cursor，首页不传 |
 
 ### 返回字段
 

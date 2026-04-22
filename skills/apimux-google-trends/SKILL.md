@@ -58,8 +58,8 @@ google_trends.get_interest_over_time → amazon.search_products → (optional) a
 | `geo` | string | 否 | 地区代码，ISO 3166-1 alpha-2 或子区域（如 `US`, `US-CA`）。不传则全球 |
 | `time` | string | 否 | 时间范围，默认 `today 12-m`。见下表 |
 | `cat` | string | 否 | Google Trends 类目 ID，默认 `"0"`（全部） |
-| `gprop` | string | 否 | Google 属性：`""` (web), `"images"`, `"news"`, `"froogle"` (shopping), `"youtube"` |
-| `tz` | integer | 否 | 时区偏移（分钟） |
+| `gprop` | string | 否 | Google 属性：`""` (web), `"images"`, `"news"`, `"froogle"` (shopping), `"youtube"`；默认 `""` (web) |
+| `tz` | integer | 否 | 时区偏移（分钟）；不传则使用 UTC |
 
 ### 时间范围
 
