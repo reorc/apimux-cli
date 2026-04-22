@@ -65,7 +65,7 @@ search → get_post_detail → get_post_comments
 | `author` | string | 作者 |
 | `score` | integer | 分数 |
 | `num_comments` | integer | 评论数 |
-| `created_time` | string | RFC3339 发布时间 |
+| `created_at` | string | RFC3339 发布时间 |
 | `permalink` | string | Reddit permalink |
 | `url` | string | 目标链接 |
 | `selftext` | string | 正文 |
@@ -102,7 +102,7 @@ search → get_post_detail → get_post_comments
 | `author` | string | 作者 |
 | `score` | integer | 分数 |
 | `num_comments` | integer | 评论数 |
-| `created_time` | string | RFC3339 发布时间 |
+| `created_at` | string | RFC3339 发布时间 |
 | `permalink` | string | Reddit permalink |
 | `url` | string | 目标链接 |
 | `selftext` | string | 正文 |
@@ -137,7 +137,7 @@ search → get_post_detail → get_post_comments
 | `score` | integer | 分数 |
 | `upvote_ratio` | number | 点赞率 |
 | `num_comments` | integer | 评论数 |
-| `created_time` | string | RFC3339 发布时间 |
+| `created_at` | string | RFC3339 发布时间 |
 | `permalink` | string | Reddit permalink |
 | `url` | string | 目标链接 |
 | `selftext` | string | 正文 |

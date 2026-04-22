@@ -61,6 +61,7 @@ search_notes → get_note_detail → get_note_comments
 | `title` | string | 标题 |
 | `description` | string | 描述 |
 | `type` | string | 笔记类型 |
+| `xsec_token` | string | 从搜索结果带回的安全 token，后续 `get_note_detail` 可能需要 |
 | `like_count` | integer | 点赞数 |
 | `collect_count` | integer | 收藏数 |
 | `comment_count` | integer | 评论数 |
@@ -83,6 +84,7 @@ search_notes → get_note_detail → get_note_comments
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `note_id` | string | 是 | 24-char hex 笔记 ID |
+| `xsec_token` | string | 否 | 从 `search_notes` 结果拿到的安全 token；部分笔记详情需要 |
 
 ### 返回字段
 
@@ -109,6 +111,7 @@ search_notes → get_note_detail → get_note_comments
 ### 规则
 
 - `note_id` 必须是 24-char hex
+- 如果 `search_notes` 返回了 `xsec_token`，调用详情时应一并传入
 - share link 在 contract 层拒绝，不接受 `xhslink.com/...`
 - 笔记不存在时返回 canonical `note_not_found`
 

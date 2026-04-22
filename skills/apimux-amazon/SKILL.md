@@ -722,8 +722,6 @@ apimux amazon get_category_best_sellers --node-id "3743561" --market "US" --quer
 | `category` | string[] | 类目路径 |
 | `seller_count` | integer | 卖家数量 |
 | `is_fba` | boolean | 是否 FBA |
-| `store_name` | string | 店铺名称 |
-| `product_type` | string | 商品类型 |
 
 ### 常见错误
 
@@ -736,6 +734,7 @@ apimux amazon get_category_best_sellers --node-id "3743561" --market "US" --quer
 - **node_id 必须是数字**：至少 3 位纯数字的 Amazon 类目节点 ID
 - **不知道 node_id 先搜类目**：调用 `search_category` 再进入类目相关 capability
 - **不存在的 node_id 返回 not-found**：`category_not_found`（HTTP 404）
+- `store_name` / `product_type` 属于上游偶发补充字段，不应作为稳定 compat 字段依赖
 - query_start / query_date 必须 ISO 格式 `YYYY-MM-DD`
 - query_days 上限 365
 

@@ -141,6 +141,34 @@ func TestProjectCapabilityCompactRedditGetPostCommentsCompatShape(t *testing.T) 
 	}
 }
 
+func TestProjectCapabilityCompactRedditGetPostDetailUsesCreatedAt(t *testing.T) {
+	payload := json.RawMessage(`{
+		"post_id":"t3_abc123",
+		"title":"Title",
+		"subreddit":"golang",
+		"score":10,
+		"num_comments":5,
+		"created_time":"2026-04-22T03:00:00Z",
+		"selftext":"Body"
+	}`)
+
+	body, err := projectCapability("reddit.get_post_detail", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	if got["created_at"] != "2026-04-22T03:00:00Z" {
+		t.Fatalf("expected created_at in compact output, got %#v", got)
+	}
+	if _, exists := got["created_time"]; exists {
+		t.Fatalf("did not expect created_time in compact output, got %#v", got)
+	}
+}
+
 func TestProjectCapabilityCompactTiktokShopProductsCanonicalColumns(t *testing.T) {
 	payload := json.RawMessage(`[
 		{"product_id":"p1","product_name":"Desk Lamp","product_cover":"https://cdn.example/p1.jpg","product_sold_count":12,"format_available_price":"$9.99","format_origin_price":"$12.99","discount":"20% off"}

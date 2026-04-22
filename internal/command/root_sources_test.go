@@ -955,6 +955,15 @@ func TestXiaohongshuGetNoteDetailCallsService(t *testing.T) {
 		if r.URL.Path != "/v1/capabilities/xiaohongshu.get_note_detail" {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
+		var req struct {
+			Params map[string]any `json:"params"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if req.Params["xsec_token"] != "token-from-search" {
+			t.Fatalf("expected xsec_token param, got %#v", req.Params)
+		}
 		_, _ = w.Write([]byte(`{"ok":true,"data":{"note_id":"67c1f4f1000000001a01b6d3"},"meta":{"capability":"xiaohongshu.get_note_detail"}}`))
 	}))
 	defer server.Close()
@@ -967,6 +976,7 @@ func TestXiaohongshuGetNoteDetailCallsService(t *testing.T) {
 		"--base-url", server.URL,
 		"xiaohongshu", "get_note_detail",
 		"--note-id", "67c1f4f1000000001a01b6d3",
+		"--xsec-token", "token-from-search",
 	})
 	if err != nil {
 		t.Fatalf("execute root: %v", err)
