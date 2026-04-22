@@ -173,7 +173,9 @@ func TestProjectCapabilityWithMetaAmazonGetCategoryTrendFiltersRequestedMetrics(
 
 func TestProjectCapabilityCompactGoogleTrends(t *testing.T) {
 	payload := json.RawMessage(`{
-		"search_parameters":{"q":"AI","geo":"US","time":"today 12-m"},
+		"search_parameters":{"q":"AI","geo":"US","time":"today 12-m","data_type":"TIMESERIES","gprop":"youtube"},
+		"averages":[{"query":"AI","value":55}],
+		"regions":[{"geo":"US-CA","name":"California","values":[{"query":"AI","value":60}]}],
 		"timeline_data":[
 			{"date":"Jan","timestamp":"1","values":[{"query":"AI","value":50}]},
 			{"date":"Feb","timestamp":"2","values":[{"query":"AI","value":60}]}
@@ -186,11 +188,159 @@ func TestProjectCapabilityCompactGoogleTrends(t *testing.T) {
 	}
 
 	text := string(body)
-	if !strings.Contains(text, `"timeline":{"columns":["date","timestamp","value"]`) {
+	if !strings.Contains(text, `"timeline":{"columns":["date","timestamp","values"]`) {
 		t.Fatalf("expected compact timeline projection, got %s", text)
 	}
 	if !strings.Contains(text, `"query":"AI"`) {
 		t.Fatalf("expected scalar context preserved, got %s", text)
+	}
+	if !strings.Contains(text, `"data_type":"TIMESERIES"`) || !strings.Contains(text, `"gprop":"youtube"`) {
+		t.Fatalf("expected compatibility scalar fields preserved, got %s", text)
+	}
+	if !strings.Contains(text, `"averages":[{"query":"AI","value":55}]`) {
+		t.Fatalf("expected averages preserved, got %s", text)
+	}
+	if !strings.Contains(text, `"regions":[{"geo":"US-CA","name":"California","values":[{"query":"AI","value":60}]}]`) {
+		t.Fatalf("expected regions preserved, got %s", text)
+	}
+}
+
+func TestProjectCapabilityCompactTikTokSearchVideosKeepsKamayColumns(t *testing.T) {
+	payload := json.RawMessage(`[
+		{
+			"video_id":"v1",
+			"video_url":"https://example.com/v1.mp4",
+			"description":"coffee maker review",
+			"create_time":"2026-04-22T00:00:00Z",
+			"like_count":12,
+			"comment_count":3,
+			"share_count":2,
+			"play_count":100,
+			"cover_image":"https://example.com/c.jpg",
+			"duration":30,
+			"region":"US",
+			"is_ad":false,
+			"author":{"user_id":"u1","unique_id":"user1","nickname":"User 1"}
+		}
+	]`)
+
+	body, err := projectCapability("tiktok.search_videos", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"columns":["video_id","video_url","description","create_time","like_count","comment_count","share_count","play_count","cover_image","duration","region","is_ad","author"]`) {
+		t.Fatalf("expected Kamay-compatible TikTok video columns, got %s", text)
+	}
+}
+
+func TestProjectCapabilityCompactTikTokCommentsKeepsAuthorObject(t *testing.T) {
+	payload := json.RawMessage(`[
+		{
+			"comment_id":"c1",
+			"text":"nice",
+			"create_time":"2026-04-22T00:00:00Z",
+			"like_count":2,
+			"reply_count":1,
+			"author":{"unique_id":"user1","nickname":"User 1","avatar_url":"https://example.com/a.jpg"}
+		}
+	]`)
+
+	body, err := projectCapability("tiktok.list_comments", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"columns":["comment_id","text","create_time","like_count","reply_count","author"]`) {
+		t.Fatalf("expected Kamay-compatible TikTok comment columns, got %s", text)
+	}
+	if !strings.Contains(text, `"nickname":"User 1"`) {
+		t.Fatalf("expected nested author object preserved, got %s", text)
+	}
+}
+
+func TestProjectCapabilityCompactMetaAdsKeepsSnapshotAndPlatforms(t *testing.T) {
+	payload := json.RawMessage(`[
+		{
+			"ad_id":"a1",
+			"page_name":"Coffee Brand",
+			"start_date":"2026-01-01T00:00:00Z",
+			"end_date":"2026-01-31T00:00:00Z",
+			"is_active":true,
+			"publisher_platforms":["facebook","instagram"],
+			"snapshot":{"body":"hello","title":"world"},
+			"collation_count":2
+		}
+	]`)
+
+	body, err := projectCapability("meta_ads.search_ads", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"columns":["ad_id","page_name","start_date","end_date","is_active","publisher_platform","snapshot","collation_count"]`) {
+		t.Fatalf("expected Kamay-compatible meta ads columns, got %s", text)
+	}
+	if !strings.Contains(text, `"facebook"`) || !strings.Contains(text, `"body":"hello"`) {
+		t.Fatalf("expected publisher platforms and snapshot preserved, got %s", text)
+	}
+}
+
+func TestProjectCapabilityCompactGoogleAdsCreativesKeepsKamayColumns(t *testing.T) {
+	payload := json.RawMessage(`[
+		{
+			"position":1,
+			"creative_id":"CR1",
+			"target_domain":"example.com",
+			"advertiser_id":"AR1",
+			"advertiser_name":"Example Inc.",
+			"first_shown_datetime":"2026-01-01T00:00:00Z",
+			"last_shown_datetime":"2026-01-31T00:00:00Z",
+			"total_days_shown":30,
+			"format":"video",
+			"details_link":"https://example.com/detail"
+		}
+	]`)
+
+	body, err := projectCapability("google_ads.list_ad_creatives", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"columns":["position","id","target_domain","advertiser.id","advertiser_name","advertiser.name","format","first_shown_datetime","last_shown_datetime","total_days_shown","details_link"]`) {
+		t.Fatalf("expected expanded Google Ads creative columns, got %s", text)
+	}
+}
+
+func TestProjectCapabilityCompactGoogleAdsDetailsKeepsVariationFields(t *testing.T) {
+	payload := json.RawMessage(`{
+		"ad_information":{"format":"video","first_shown_date":"2026-01-01","last_shown_date":"2026-01-31","last_shown_datetime":"2026-01-31T00:00:00Z","regions":[{"code":"US"}]},
+		"variations":[
+			{
+				"title":"Title",
+				"link":"https://example.com",
+				"description":"Desc",
+				"displayed_link":"example.com",
+				"long_headline":"Long",
+				"call_to_action":"Shop now",
+				"thumbnail":"https://example.com/t.jpg",
+				"image":"https://example.com/i.jpg",
+				"video_link":"https://example.com/v.mp4",
+				"video_id":"vid1",
+				"duration":"0:30",
+				"channel":"Channel",
+				"is_skippable":true
+			}
+		]
+	}`)
+
+	body, err := projectCapability("google_ads.get_ad_details", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"columns":["title","link","description","displayed_link","long_headline","call_to_action","thumbnail","image","video_link","video_id","duration","channel","is_skippable"]`) {
+		t.Fatalf("expected expanded Google Ads detail columns, got %s", text)
 	}
 }
 

@@ -561,7 +561,7 @@ func TestTikTokSearchVideosCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	assertCompactTableOutputContains(t, stdout.String(), `"columns":["video_id","description","create_time","author","author_handle","play_count","like_count","comment_count","share_count"]`, `"rows":[]`)
+	assertCompactTableOutputContains(t, stdout.String(), `"columns":["video_id","video_url","description","create_time","like_count","comment_count","share_count","play_count","cover_image","duration","region","is_ad","author"]`, `"rows":[]`)
 }
 
 func TestMetaAdsSearchCallsService(t *testing.T) {
@@ -592,7 +592,7 @@ func TestMetaAdsSearchCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	if got := stdout.String(); !strings.Contains(got, `"columns":["ad_id","page_name","start_date","end_date","collation_count","is_active"]`) || !strings.Contains(got, `"rows":[]`) {
+	if got := stdout.String(); !strings.Contains(got, `"columns":["ad_id","page_name","start_date","end_date","is_active","publisher_platform","snapshot","collation_count"]`) || !strings.Contains(got, `"rows":[]`) {
 		t.Fatalf("expected compact table output, got %s", got)
 	}
 }
@@ -788,7 +788,7 @@ func TestGoogleAdsListAdCreativesCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	if got := stdout.String(); !strings.Contains(got, `"columns":["advertiser_name","creative_id","format","first_shown_datetime","last_shown_datetime","total_days_shown"]`) || !strings.Contains(got, `"rows":[]`) {
+	if got := stdout.String(); !strings.Contains(got, `"columns":["position","id","target_domain","advertiser.id","advertiser_name","advertiser.name","format","first_shown_datetime","last_shown_datetime","total_days_shown","details_link"]`) || !strings.Contains(got, `"rows":[]`) {
 		t.Fatalf("expected compact table output, got %s", got)
 	}
 }
