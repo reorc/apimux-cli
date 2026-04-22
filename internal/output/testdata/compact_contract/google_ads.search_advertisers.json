@@ -1,0 +1,24 @@
+{
+  "input": {
+    "ok": true,
+    "data": {
+      "advertisers": [],
+      "domains": [
+        {
+          "domain": "liououportablecoffeemaker.com"
+        }
+      ]
+    },
+    "meta": {
+      "capability": "google_ads.search_advertisers"
+    }
+  },
+  "want": {
+    "advertisers": null,
+    "domains": [
+      {
+        "name": "liououportablecoffeemaker.com"
+      }
+    ]
+  }
+}

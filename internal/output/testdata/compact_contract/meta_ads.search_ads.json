@@ -1,0 +1,56 @@
+{
+  "input": {
+    "ok": true,
+    "data": [
+      {
+        "ad_id": "a1",
+        "page_name": "Coffee Brand",
+        "start_date": "2026-01-01T00:00:00Z",
+        "end_date": "2026-01-31T00:00:00Z",
+        "is_active": true,
+        "publisher_platforms": [
+          "facebook",
+          "instagram"
+        ],
+        "snapshot": {
+          "body": "hello",
+          "title": "world"
+        },
+        "collation_count": 2
+      }
+    ],
+    "meta": {
+      "capability": "meta_ads.search_ads"
+    }
+  },
+  "want": {
+    "columns": [
+      "ad_id",
+      "page_name",
+      "start_date",
+      "end_date",
+      "is_active",
+      "publisher_platform",
+      "snapshot",
+      "collation_count"
+    ],
+    "rows": [
+      [
+        "a1",
+        "Coffee Brand",
+        "2026-01-01T00:00:00Z",
+        "2026-01-31T00:00:00Z",
+        true,
+        [
+          "facebook",
+          "instagram"
+        ],
+        {
+          "body": "hello",
+          "title": "world"
+        },
+        2
+      ]
+    ]
+  }
+}

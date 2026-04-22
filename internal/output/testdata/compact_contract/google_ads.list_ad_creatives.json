@@ -1,0 +1,52 @@
+{
+  "input": {
+    "ok": true,
+    "data": [
+      {
+        "position": 1,
+        "creative_id": "CR1",
+        "target_domain": "example.com",
+        "advertiser_id": "AR1",
+        "advertiser_name": "Example Inc.",
+        "first_shown_datetime": "2026-01-01T00:00:00Z",
+        "last_shown_datetime": "2026-01-31T00:00:00Z",
+        "total_days_shown": 30,
+        "format": "video",
+        "details_link": "https://example.com/detail"
+      }
+    ],
+    "meta": {
+      "capability": "google_ads.list_ad_creatives"
+    }
+  },
+  "want": {
+    "columns": [
+      "position",
+      "id",
+      "target_domain",
+      "advertiser.id",
+      "advertiser_name",
+      "advertiser.name",
+      "format",
+      "first_shown_datetime",
+      "last_shown_datetime",
+      "total_days_shown",
+      "details_link"
+    ],
+    "rows": [
+      [
+        1,
+        "CR1",
+        "example.com",
+        "AR1",
+        "Example Inc.",
+        "Example Inc.",
+        "video",
+        "2026-01-01T00:00:00Z",
+        "2026-01-31T00:00:00Z",
+        30,
+        "https://example.com/detail"
+      ]
+    ]
+  }
+}

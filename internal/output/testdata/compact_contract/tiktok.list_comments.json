@@ -1,0 +1,46 @@
+{
+  "input": {
+    "ok": true,
+    "data": [
+      {
+        "comment_id": "c1",
+        "text": "nice",
+        "create_time": "2026-04-22T00:00:00Z",
+        "like_count": 2,
+        "reply_count": 1,
+        "author": {
+          "unique_id": "user1",
+          "nickname": "User 1",
+          "avatar_url": "https://example.com/a.jpg"
+        }
+      }
+    ],
+    "meta": {
+      "capability": "tiktok.list_comments"
+    }
+  },
+  "want": {
+    "columns": [
+      "comment_id",
+      "text",
+      "create_time",
+      "like_count",
+      "reply_count",
+      "author"
+    ],
+    "rows": [
+      [
+        "c1",
+        "nice",
+        "2026-04-22T00:00:00Z",
+        2,
+        1,
+        {
+          "unique_id": "user1",
+          "nickname": "User 1",
+          "avatar_url": "https://example.com/a.jpg"
+        }
+      ]
+    ]
+  }
+}

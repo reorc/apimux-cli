@@ -1,0 +1,79 @@
+{
+  "input": {
+    "ok": true,
+    "data": {
+      "ad_information": {
+        "format": "video",
+        "first_shown_date": "2026-01-01",
+        "last_shown_date": "2026-01-31",
+        "last_shown_datetime": "2026-01-31T00:00:00Z",
+        "regions": [
+          {
+            "code": "US"
+          }
+        ]
+      },
+      "variations": [
+        {
+          "title": "Title",
+          "link": "https://example.com",
+          "description": "Desc",
+          "displayed_link": "example.com",
+          "long_headline": "Long",
+          "call_to_action": "Shop now",
+          "thumbnail": "https://example.com/t.jpg",
+          "image": "https://example.com/i.jpg",
+          "video_link": "https://example.com/v.mp4",
+          "video_id": "vid1",
+          "duration": "0:30",
+          "channel": "Channel",
+          "is_skippable": true
+        }
+      ]
+    },
+    "meta": {
+      "capability": "google_ads.get_ad_details"
+    }
+  },
+  "want": {
+    "format": "video",
+    "first_shown_date": "2026-01-01",
+    "last_shown_date": "2026-01-31",
+    "last_shown_datetime": "2026-01-31T00:00:00Z",
+    "region_count": 1,
+    "variations": {
+      "columns": [
+        "title",
+        "link",
+        "description",
+        "displayed_link",
+        "long_headline",
+        "call_to_action",
+        "thumbnail",
+        "image",
+        "video_link",
+        "video_id",
+        "duration",
+        "channel",
+        "is_skippable"
+      ],
+      "rows": [
+        [
+          "Title",
+          "https://example.com",
+          "Desc",
+          "example.com",
+          "Long",
+          "Shop now",
+          "https://example.com/t.jpg",
+          "https://example.com/i.jpg",
+          "https://example.com/v.mp4",
+          "vid1",
+          "0:30",
+          "Channel",
+          true
+        ]
+      ]
+    }
+  }
+}

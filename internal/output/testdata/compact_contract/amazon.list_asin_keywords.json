@@ -1,0 +1,49 @@
+{
+  "input": {
+    "ok": true,
+    "data": [
+      {
+        "keyword": "portable coffee maker",
+        "kw_characters": 22,
+        "conversion_characters": 11,
+        "exposure_type": "natural",
+        "last_rank": "12",
+        "ad_last_rank": "3",
+        "est_searches_num": 3200,
+        "searches_rank": 45,
+        "ratio_score": 0.71
+      }
+    ],
+    "meta": {
+      "capability": "amazon.list_asin_keywords"
+    }
+  },
+  "want": {
+    "items": {
+      "columns": [
+        "keyword",
+        "kw_characters",
+        "conversion_characters",
+        "exposure_type",
+        "last_rank_str",
+        "ad_last_rank_str",
+        "est_searches_num",
+        "searches_rank",
+        "ratio_score"
+      ],
+      "rows": [
+        [
+          "portable coffee maker",
+          22,
+          11,
+          "natural",
+          "12",
+          "3",
+          3200,
+          45,
+          0.71
+        ]
+      ]
+    }
+  }
+}

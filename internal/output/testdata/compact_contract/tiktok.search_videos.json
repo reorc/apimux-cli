@@ -1,0 +1,67 @@
+{
+  "input": {
+    "ok": true,
+    "data": [
+      {
+        "video_id": "v1",
+        "video_url": "https://example.com/v1.mp4",
+        "description": "coffee maker review",
+        "create_time": "2026-04-22T00:00:00Z",
+        "like_count": 12,
+        "comment_count": 3,
+        "share_count": 2,
+        "play_count": 100,
+        "cover_image": "https://example.com/c.jpg",
+        "duration": 30,
+        "region": "US",
+        "is_ad": false,
+        "author": {
+          "user_id": "u1",
+          "unique_id": "user1",
+          "nickname": "User 1"
+        }
+      }
+    ],
+    "meta": {
+      "capability": "tiktok.search_videos"
+    }
+  },
+  "want": {
+    "columns": [
+      "video_id",
+      "video_url",
+      "description",
+      "create_time",
+      "like_count",
+      "comment_count",
+      "share_count",
+      "play_count",
+      "cover_image",
+      "duration",
+      "region",
+      "is_ad",
+      "author"
+    ],
+    "rows": [
+      [
+        "v1",
+        "https://example.com/v1.mp4",
+        "coffee maker review",
+        "2026-04-22T00:00:00Z",
+        12,
+        3,
+        2,
+        100,
+        "https://example.com/c.jpg",
+        30,
+        "US",
+        false,
+        {
+          "user_id": "u1",
+          "unique_id": "user1",
+          "nickname": "User 1"
+        }
+      ]
+    ]
+  }
+}

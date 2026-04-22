@@ -3,6 +3,9 @@ package output
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -257,5 +260,57 @@ func TestWriteCapabilityResponseCompactAmazonGetCategoryTrendUsesRequestedMetric
 	columns, _ := items["columns"].([]any)
 	if len(columns) != 3 || columns[0] != "month" || columns[1] != "sales_volume" || columns[2] != "brand_count" {
 		t.Fatalf("unexpected compact category trend columns: %#v", columns)
+	}
+}
+
+type compactContractFixture struct {
+	Input json.RawMessage `json:"input"`
+	Want  json.RawMessage `json:"want"`
+}
+
+func TestWriteCapabilityResponseCompactContractFixtures(t *testing.T) {
+	fixtures, err := filepath.Glob(filepath.Join("testdata", "compact_contract", "*.json"))
+	if err != nil {
+		t.Fatalf("glob compact contract fixtures: %v", err)
+	}
+	if len(fixtures) == 0 {
+		t.Fatal("expected at least one compact contract fixture")
+	}
+
+	for _, fixturePath := range fixtures {
+		fixturePath := fixturePath
+		t.Run(filepath.Base(fixturePath), func(t *testing.T) {
+			raw, err := os.ReadFile(fixturePath)
+			if err != nil {
+				t.Fatalf("read fixture: %v", err)
+			}
+
+			var fixture compactContractFixture
+			if err := json.Unmarshal(raw, &fixture); err != nil {
+				t.Fatalf("unmarshal fixture: %v", err)
+			}
+
+			var stdout bytes.Buffer
+			renderer := Renderer{Stdout: &stdout}
+			if err := renderer.WriteCapabilityResponse(fixture.Input, BodyOutputCompact, false); err != nil {
+				t.Fatalf("WriteCapabilityResponse() error = %v", err)
+			}
+
+			var got any
+			if err := json.Unmarshal(bytes.TrimSpace(stdout.Bytes()), &got); err != nil {
+				t.Fatalf("unmarshal actual output: %v", err)
+			}
+
+			var want any
+			if err := json.Unmarshal(fixture.Want, &want); err != nil {
+				t.Fatalf("unmarshal expected output: %v", err)
+			}
+
+			if !reflect.DeepEqual(got, want) {
+				gotPretty, _ := json.MarshalIndent(got, "", "  ")
+				wantPretty, _ := json.MarshalIndent(want, "", "  ")
+				t.Fatalf("compact contract mismatch\nfixture: %s\ngot:\n%s\nwant:\n%s", fixturePath, gotPretty, wantPretty)
+			}
+		})
 	}
 }

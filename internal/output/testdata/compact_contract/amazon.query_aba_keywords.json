@@ -1,0 +1,108 @@
+{
+  "input": {
+    "ok": true,
+    "data": [
+      {
+        "keyword": "portable espresso machine",
+        "keyword_cn_name": "便携式意式咖啡机",
+        "rank": 1,
+        "search_volume": 14500,
+        "word_count": 3,
+        "product_count": 250,
+        "rank_change_of_weekly": -2,
+        "cpc": 1.25,
+        "cpc_range": "1.1-1.4",
+        "search_conversion_rate": 0.18,
+        "search_conversion_rate_d90": 0.2,
+        "click_conversion_rate_d90": 0.12,
+        "click_of_90d": 9000,
+        "sales_volume_of_90d": 1100,
+        "share_click_rate": 0.08,
+        "share_conversion_rate": 0.03,
+        "search_volume_growth_rate_trend": "up",
+        "top3_asin": [
+          "A1",
+          "A2",
+          "A3"
+        ],
+        "top3_brand": [
+          "BrandA",
+          "BrandB",
+          "BrandC"
+        ],
+        "top3_category": [
+          "Coffee Machines"
+        ],
+        "season": "all",
+        "update": "2026-04-22"
+      }
+    ],
+    "meta": {
+      "capability": "amazon.query_aba_keywords"
+    }
+  },
+  "want": {
+    "items": {
+      "columns": [
+        "keyword",
+        "keyword_cn_name",
+        "rank",
+        "search_volume",
+        "word_count",
+        "product_count",
+        "rank_change_of_weekly",
+        "cpc",
+        "cpc_range",
+        "search_conversion_rate",
+        "search_conversion_rate_d90",
+        "click_conversion_rate_d90",
+        "click_of_90d",
+        "sales_volume_of_90d",
+        "share_click_rate",
+        "share_conversion_rate",
+        "search_volume_growth_rate_trend",
+        "top3_asin",
+        "top3_brand",
+        "top3_category",
+        "season",
+        "update"
+      ],
+      "rows": [
+        [
+          "portable espresso machine",
+          "便携式意式咖啡机",
+          1,
+          14500,
+          3,
+          250,
+          -2,
+          1.25,
+          "1.1-1.4",
+          0.18,
+          0.2,
+          0.12,
+          9000,
+          1100,
+          0.08,
+          0.03,
+          "up",
+          [
+            "A1",
+            "A2",
+            "A3"
+          ],
+          [
+            "BrandA",
+            "BrandB",
+            "BrandC"
+          ],
+          [
+            "Coffee Machines"
+          ],
+          "all",
+          "2026-04-22"
+        ]
+      ]
+    }
+  }
+}

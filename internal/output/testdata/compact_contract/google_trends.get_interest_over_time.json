@@ -1,0 +1,91 @@
+{
+  "input": {
+    "ok": true,
+    "data": {
+      "search_parameters": {
+        "q": "AI",
+        "geo": "US",
+        "time": "today 12-m",
+        "data_type": "TIMESERIES",
+        "gprop": "youtube"
+      },
+      "averages": [
+        {
+          "query": "AI",
+          "value": 55
+        }
+      ],
+      "regions": [
+        {
+          "geo": "US-CA",
+          "name": "California",
+          "values": [
+            {
+              "query": "AI",
+              "value": 60
+            }
+          ]
+        }
+      ],
+      "timeline_data": [
+        {
+          "date": "Jan",
+          "timestamp": "1",
+          "values": [
+            {
+              "query": "AI",
+              "value": 50
+            }
+          ]
+        }
+      ]
+    },
+    "meta": {
+      "capability": "google_trends.get_interest_over_time"
+    }
+  },
+  "want": {
+    "query": "AI",
+    "geo": "US",
+    "time": "today 12-m",
+    "data_type": "TIMESERIES",
+    "gprop": "youtube",
+    "averages": [
+      {
+        "query": "AI",
+        "value": 55
+      }
+    ],
+    "regions": [
+      {
+        "geo": "US-CA",
+        "name": "California",
+        "values": [
+          {
+            "query": "AI",
+            "value": 60
+          }
+        ]
+      }
+    ],
+    "timeline": {
+      "columns": [
+        "date",
+        "timestamp",
+        "values"
+      ],
+      "rows": [
+        [
+          "Jan",
+          "1",
+          [
+            {
+              "query": "AI",
+              "value": 50
+            }
+          ]
+        ]
+      ]
+    }
+  }
+}
