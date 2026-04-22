@@ -32,26 +32,6 @@ TikTok 数据查询，覆盖内容侧和 TikTok Shop 两条分析路径。
 | `shop_products` | 店铺商品列表 | 达人带货分析、选品 |
 | `shop_product_info` | 商品详情 | 商品研究、跨平台对比 |
 
-## Agent Journeys
-
-### Journey 1: 内容分析
-```
-search_videos → list_comments
-```
-先找热视频，再对目标视频拉评论。
-
-### Journey 2: TikTok Shop 选品
-```
-shop_products → shop_product_info
-```
-先看卖家商品列表，再下钻单品详情。
-
-### Journey 3: 跨平台市场验证
-```
-google_trends.get_interest_over_time → search_videos → amazon.search_products
-```
-先看需求信号，再比对 TikTok 内容热度和 Amazon 供给侧。
-
 ---
 
 ## tiktok.search_videos
@@ -64,7 +44,7 @@ google_trends.get_interest_over_time → search_videos → amazon.search_product
 |------|------|------|------|
 | `keyword` | string | 是 | 搜索关键词 |
 | `region` | string | 否 | 地区代码，ISO 两位国家码；不传则不限地区 |
-| `sort_by` | string | 否 | `relevance`、`likes`、`date`；不传则由 provider 决定 |
+| `sort_by` | string | 否 | `relevance`、`likes`、`date`；默认 `relevance` |
 | `publish_time` | string | 否 | `all`、`1d`、`1w`、`1m`、`3m`、`6m`；默认 `all` |
 | `cursor` | integer | 否 | 分页 cursor，首页不传 |
 | `count` | integer | 否 | 返回数量，范围 1-35 |
@@ -90,19 +70,18 @@ apimux tiktok search_videos --keyword "desk setup" --sort-by "likes" --publish-t
 | `play_count` | integer | 播放数 |
 | `cover_image` | string | 封面图 |
 | `duration` | integer | 视频时长（秒） |
-| `region` | string | 地区信息（若 provider 返回） |
-| `is_ad` | boolean | 是否广告（若 provider 返回） |
+| `region` | string | 地区信息 |
+| `is_ad` | boolean | 是否广告 |
 | `author` | object | 作者摘要信息 |
 | `music` | object | 背景音乐摘要信息 |
 
 ### 规则
 
 - `keyword` 必填
-- `sort_by` canonical 值是 `relevance`、`likes`、`date`；CLI 也兼容 legacy provider 数值 `0/1/2`
-- `publish_time` canonical 值是 `all`、`1d`、`1w`、`1m`、`3m`、`6m`；CLI 也兼容 legacy provider 数值 `0/1/7/30/90/180`
+- `sort_by` 推荐使用标准枚举值；CLI 也兼容旧版数值参数 `0/1/2`
+- `publish_time` 推荐使用标准枚举值；CLI 也兼容旧版数值参数 `0/1/7/30/90/180`
 - `count` 范围 1-35
-- provider 的数值枚举不会暴露到 contract
-- 分页状态放在 `meta.cursor` 和 `meta.has_more`，不是 `data`
+- 分页状态放在 `meta.cursor` 和 `meta.has_more`
 
 ---
 
@@ -143,7 +122,7 @@ apimux tiktok list_comments --video-id "7489123456789012345" --count 20
 - `video_id` 必须是纯数字字符串，不接受完整 TikTok URL
 - `count` 范围 1-50
 - 空评论列表返回 `ok=true`
-- 分页状态放在 `meta.cursor`、`meta.has_more`、`meta.total`，不是 `data`
+- 分页状态放在 `meta.cursor`、`meta.has_more`、`meta.total`
 
 ---
 
@@ -185,7 +164,6 @@ apimux tiktok shop_products --seller-id "123456789" --sort "sale" --top-n 40
 - `region` 仅支持 `US`
 - `sort` 只接受 `sale` 或 `rec`
 - `top_n` 范围 1-200
-- 内部分页 fan-out 对调用方透明
 - CLI 默认 compact 输出为列式 `{columns, rows}`
 
 ---
@@ -229,12 +207,11 @@ apimux tiktok shop_product_info --product-id "1729384756"
 
 - `product_id` 必填
 - `region` 仅支持 `US`
-- 商品不存在时返回 canonical not-found error
+- 商品不存在时返回 `product_not_found` 错误
 
 ---
 
 ## 通用规则
 
-- **service 使用 canonical envelope，CLI 默认 data-only**：详见 [apimux-shared](../apimux-shared/SKILL.md)
-- **不暴露 provider 内部信息**：不会暴露 TikLiveAPI / PrimeAPI / YimianData 名称
-- **TikTok Shop 第一阶段仅支持 US**：不要对非 US 市场调用 `shop_products` 或 `shop_product_info`
+- **响应结构与错误处理**：详见 [apimux-shared](../apimux-shared/SKILL.md)
+- **TikTok Shop 地区限制**：当前仅支持 US 市场

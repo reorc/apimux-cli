@@ -19,7 +19,7 @@ Meta Ads Library 数据查询，覆盖广告搜索与广告详情两个核心能
 
 - 想按关键词找广告创意样本 → `search_ads`
 - 想下钻单条广告详情 → `get_ad_detail`
-- 想做广告样本 fan-out 分析 → 先 `search_ads`，再对目标 `ad_id` 调 `get_ad_detail`
+- 想做广告样本分析 → 先 `search_ads`，再对目标 `ad_id` 调 `get_ad_detail`
 
 ## Capabilities 概览
 
@@ -27,14 +27,6 @@ Meta Ads Library 数据查询，覆盖广告搜索与广告详情两个核心能
 |------------|------|----------|
 | `search_ads` | 搜索 Meta Ads Library 广告 | 广告创意研究、竞品广告发现 |
 | `get_ad_detail` | 获取单条广告详情 | EU 透明度信息、政治广告详情下钻 |
-
-## Agent Journey
-
-```
-search_ads → get_ad_detail
-```
-
-先搜索广告，再对感兴趣的 `ad_id` 拉详情。
 
 ---
 
@@ -75,7 +67,7 @@ apimux meta_ads search_ads --q "fitness app" --platforms "facebook,instagram" --
 | `end_date` | string | 广告结束时间 |
 | `is_active` | boolean | 是否活跃 |
 | `categories` | string[] | 广告类别 |
-| `publisher_platforms` | string[] | 广告投放平台，小写 canonical 值 |
+| `publisher_platforms` | string[] | 广告投放平台 |
 | `snapshot` | object | 创意摘要，包括正文、标题、链接、卡片、视频等 |
 
 ### 规则
@@ -86,7 +78,6 @@ apimux meta_ads search_ads --q "fitness app" --platforms "facebook,instagram" --
 - `platforms` 必须是逗号分隔的小写平台名
 - `start_date` / `end_date` 必须是 `YYYY-MM-DD`
 - 分页状态放在 `meta.next_page_token`
-- provider 名称不会出现在响应里
 
 ---
 
@@ -112,20 +103,18 @@ apimux meta_ads get_ad_detail --ad-id "477570185419072"
 |------|------|------|
 | `ad_id` | string | 广告 ID |
 | `eu_transparency` | object | EU 透明度信息 |
-| `political_insights` | object | 政治广告洞察信息（若 provider 返回） |
-| `verified_voice` | object | verified voice 信息（若 provider 返回） |
+| `political_insights` | object | 政治广告洞察信息 |
+| `verified_voice` | object | verified voice 信息 |
 
 ### 规则
 
 - `ad_id` 必填
-- 广告不存在时返回 canonical `ad_not_found`
+- 广告不存在时返回 `ad_not_found` 错误
 - contract 不要求必须先调用 `search_ads`
-- provider 名称不会出现在响应里
 
 ---
 
 ## 通用规则
 
-- **service 使用 canonical envelope，CLI 默认 data-only**：详见 [apimux-shared](../apimux-shared/SKILL.md)
-- **分页 token 在 `meta`**：`search_ads` 的下一页 token 在 `meta.next_page_token`
-- **不暴露 provider 内部信息**：不会暴露真实上游系统名称
+- **响应结构与错误处理**：详见 [apimux-shared](../apimux-shared/SKILL.md)
+- **分页**：`search_ads` 的下一页 token 在 `meta.next_page_token`

@@ -14,7 +14,7 @@ metadata:
 
 ## 响应结构
 
-APIMux **service contract** 仍然使用 canonical envelope：
+APIMux service contract 使用标准 envelope：
 
 ```json
 {
@@ -36,16 +36,15 @@ APIMux **service contract** 仍然使用 canonical envelope：
 
 **Service 规则**：
 - `ok=true` 时读 `data`，`ok=false` 时读 `error`
-- 空结果（如搜索无匹配）是 `ok=true, data=[]`，不是 error
-- `meta` 始终存在，无论成功或失败
+- 空结果（如搜索无匹配）返回 `ok=true, data=[]`，不是 error
+- `meta` 始终存在
 
-**CLI 默认规则（agent-friendly）**：
-- `apimux <source> <capability>` 默认输出 compact agent-facing body
-- 错误时默认只输出 `{"error": ...}`
-- 默认输出会自动暴露关键 `meta` 字段（分页、partial-failure），格式为 `{"data": ..., "meta": {...}}`
-- 无关键 metadata 时，输出仍为纯 data（向后兼容）
-- 需要排查问题或查看完整 envelope 时，使用 `--debug` 输出完整 envelope
-- CLI debug 输出会去掉 provider 标识字段，不暴露上游供应商
+**CLI 默认输出**：
+- `apimux <source> <capability>` 默认输出精简的数据体
+- 错误时输出 `{"error": ...}`
+- 自动包含关键 `meta` 字段（分页、partial-failure 等），格式为 `{"data": ..., "meta": {...}}`
+- 无关键 metadata 时，输出仅为 data（向后兼容）
+- 使用 `--debug` 查看完整响应结构
 
 ## 错误处理（Error Taxonomy）
 
@@ -75,13 +74,13 @@ Service 侧错误响应结构：
 各 source 还有自己的业务错误码（如 `product_not_found`、`category_not_found`），详见对应 skill 文档。
 
 **规则**：
-- 所有错误都是 canonical 的，不会泄漏上游 provider 的原始错误格式
-- `validation_error` 在 facade 层拦截，不会到达上游
+- 所有错误码都是标准化的
+- `validation_error` 在请求到达上游前就被拦截
 - 遇到未知错误码时，向用户报告完整 error 对象
 
 ## Partial-Failure 语义
 
-部分 capability（如 `amazon.get_category_trend`）支持 fan-out 聚合，可能出现部分成功：
+部分能力支持多维度聚合查询，可能出现部分成功：
 
 ```json
 {
@@ -107,7 +106,7 @@ Service 侧错误响应结构：
 
 ## 关键 Metadata 自动暴露
 
-从 CLI 版本 1.1.0 开始，compact 模式会自动暴露以下关键 metadata：
+CLI 默认输出会自动包含以下关键 metadata：
 
 **分页 metadata（当存在时）：**
 - `cursor` — 下一页的游标
@@ -134,31 +133,42 @@ Service 侧错误响应结构：
 
 当无关键 metadata 时，输出仍为纯 data（向后兼容）。
 
+## CLI Flag 命名约定
+
+APIMux CLI 的参数名到 flag 的映射规则：
+
+- **单词参数**：直接加 `--` 前缀，如 `asin` → `--asin`，`q` → `--q`
+- **多词参数（snake_case）**：转为 kebab-case，如 `node_id` → `--node-id`，`begin_date` → `--begin-date`，`page_size` → `--page-size`
+- **数组参数**：传逗号分隔的字符串，如 `--asins "B0CM5JV26D,B0D1234567"`，`--keywords "yoga mat,pilates ring"`
+- **boolean 参数**：传 `true` 或 `false`，如 `--only-purchase true`
+
+**注意**：不同 skill 的参数名可能不同（如 `q` vs `keyword` vs `query`），这是 capability 语义差异，不是命名错误。跨 skill 调用时，请以各 skill 文档的参数表为准，不要从其他 skill 迁移参数名习惯。
+
 ## CLI 通用用法
 
 ```bash
-# 默认输出 compact body
+# 默认输出
 apimux amazon get_product --asin "B0CM5JV26D" --market "US"
 
-# compact pretty 模式（人类可读）
+# 人类可读格式
 apimux --output pretty amazon get_product --asin "B0CM5JV26D" --market "US"
 
-# raw data 模式（跳过 compact projection）
+# 原始数据（跳过精简处理）
 apimux --output data amazon get_product --asin "B0CM5JV26D" --market "US"
 
-# debug 模式：完整 envelope（已去掉 provider source）
+# 完整响应结构（排查问题时使用）
 apimux --debug amazon get_product --asin "B0CM5JV26D" --market "US"
 
-# 列出所有 capability
-apimux schema list
+# 列出所有能力名称
+apimux schema capabilities
 
-# 查看 capability 参数结构
+# 查看能力参数
 apimux schema show amazon.get_product
 ```
 
 **CLI 规则**：
-- 默认输出 compact body，Agent 应优先消费该输出
-- `--output pretty` = compact body + pretty JSON
-- `--output data` / `data-pretty` 会跳过 compact projection
-- 只有 `--debug` 才会输出完整 envelope
-- 所有 CLI 命令遵循 `apimux <source> <capability> [flags]` 格式
+- 默认输出精简数据体，适合程序消费
+- `--output pretty` 输出格式化的精简数据
+- `--output data` / `data-pretty` 跳过精简处理，返回原始数据
+- `--debug` 输出完整响应结构
+- 所有命令格式：`apimux <source> <capability> [flags]`
