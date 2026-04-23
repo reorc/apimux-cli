@@ -372,15 +372,21 @@ func TestProjectCapabilityCompactRedditGetPostCommentsCompatShape(t *testing.T) 
 	}
 }
 
-func TestProjectCapabilityCompactRedditGetPostDetailUsesCreatedAt(t *testing.T) {
+func TestProjectCapabilityCompactRedditGetPostDetailPassThrough(t *testing.T) {
 	payload := json.RawMessage(`{
 		"post_id":"t3_abc123",
 		"title":"Title",
 		"subreddit":"golang",
+		"author":"gopher",
 		"score":10,
+		"upvote_ratio":0.95,
 		"num_comments":5,
 		"created_time":"2026-04-22T03:00:00Z",
-		"selftext":"Body"
+		"permalink":"/r/golang/comments/abc123/title/",
+		"url":"https://example.com",
+		"selftext":"Body",
+		"thumbnail":"https://cdn.example/thumb.jpg",
+		"is_video":false
 	}`)
 
 	body, err := projectCapability("reddit.get_post_detail", payload, FormatCompact)
@@ -392,11 +398,89 @@ func TestProjectCapabilityCompactRedditGetPostDetailUsesCreatedAt(t *testing.T) 
 	if err := json.Unmarshal(body, &got); err != nil {
 		t.Fatalf("unmarshal compact projection: %v", err)
 	}
-	if got["created_at"] != "2026-04-22T03:00:00Z" {
-		t.Fatalf("expected created_at in compact output, got %#v", got)
+	// PassThrough: canonical fields preserved as-is
+	if got["created_time"] != "2026-04-22T03:00:00Z" {
+		t.Fatalf("expected created_time in compact output, got %#v", got)
 	}
-	if _, exists := got["created_time"]; exists {
-		t.Fatalf("did not expect created_time in compact output, got %#v", got)
+	if got["author"] != "gopher" {
+		t.Fatalf("expected author in compact output, got %#v", got)
+	}
+	if got["permalink"] != "/r/golang/comments/abc123/title/" {
+		t.Fatalf("expected permalink in compact output, got %#v", got)
+	}
+	if _, exists := got["created_at"]; exists {
+		t.Fatalf("did not expect renamed created_at in pass-through output, got %#v", got)
+	}
+}
+
+func TestProjectCapabilityCompactDouyinGetVideoDetailPassThrough(t *testing.T) {
+	payload := json.RawMessage(`{
+		"aweme_id":"7123456789",
+		"description":"Test video",
+		"create_time":1714000000,
+		"share_url":"https://www.douyin.com/video/7123456789",
+		"author":{"user_id":"u1","nickname":"TestUser","follower_count":1000,"is_verified":true,"region":"CN"},
+		"statistics":{"like_count":500,"comment_count":20,"share_count":10,"play_count":5000},
+		"video":{"duration":30,"ratio":"9:16","cover_image":"https://cdn.example/cover.jpg","video_url":"https://cdn.example/video.mp4"}
+	}`)
+
+	body, err := projectCapability("douyin.get_video_detail", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	// PassThrough: full canonical object preserved
+	author, _ := got["author"].(map[string]any)
+	if author["user_id"] != "u1" {
+		t.Fatalf("expected author.user_id in pass-through output, got %#v", got)
+	}
+	stats, _ := got["statistics"].(map[string]any)
+	if stats["play_count"] == nil {
+		t.Fatalf("expected statistics.play_count in pass-through output, got %#v", got)
+	}
+}
+
+func TestProjectCapabilityCompactXiaohongshuGetNoteDetailPassThrough(t *testing.T) {
+	payload := json.RawMessage(`{
+		"note_id":"n1",
+		"title":"Test Note",
+		"description":"Full description",
+		"type":"normal",
+		"user_id":"u1",
+		"nickname":"Author",
+		"avatar":"https://cdn.example/avatar.jpg",
+		"like_count":100,
+		"collect_count":50,
+		"comment_count":20,
+		"share_count":10,
+		"images":["https://cdn.example/img1.jpg"],
+		"tags":["tag1","tag2"],
+		"time":1714000000,
+		"video_url":""
+	}`)
+
+	body, err := projectCapability("xiaohongshu.get_note_detail", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	// PassThrough: full canonical object preserved
+	if got["user_id"] != "u1" {
+		t.Fatalf("expected user_id in pass-through output, got %#v", got)
+	}
+	if got["description"] != "Full description" {
+		t.Fatalf("expected description in pass-through output, got %#v", got)
+	}
+	if _, exists := got["desc"]; exists {
+		t.Fatalf("did not expect legacy desc field in pass-through output, got %#v", got)
 	}
 }
 

@@ -334,19 +334,7 @@ var projectionRules = map[string]projectionRule{
 	},
 	"douyin.get_video_detail": {
 		Compact: projectionSpec{
-			Scalars: []fieldRule{
-				{From: "aweme_id", To: "aweme_id"},
-				{From: "description", To: "description"},
-				{From: "create_time", To: "create_time"},
-				{From: "share_url", To: "share_url"},
-				{From: "author.nickname", To: "author.nickname"},
-				{From: "author.region", To: "author.region"},
-				{From: "statistics.like_count", To: "statistics.like_count"},
-				{From: "statistics.comment_count", To: "statistics.comment_count"},
-				{From: "statistics.share_count", To: "statistics.share_count"},
-				{From: "video.duration", To: "video.duration"},
-				{From: "video.ratio", To: "video.ratio"},
-			},
+			PassThrough: true,
 		},
 	},
 	"douyin.search_videos": {
@@ -555,15 +543,7 @@ var projectionRules = map[string]projectionRule{
 	},
 	"reddit.get_post_detail": {
 		Compact: projectionSpec{
-			Scalars: []fieldRule{
-				{From: "post_id", To: "post_id"},
-				{From: "title", To: "title"},
-				{From: "subreddit", To: "subreddit"},
-				{From: "score", To: "score"},
-				{From: "num_comments", To: "num_comments"},
-				{From: "created_time", To: "created_at"},
-				{From: "selftext", To: "selftext"},
-			},
+			PassThrough: true,
 		},
 	},
 	"reddit.get_subreddit_feed": {
@@ -708,16 +688,7 @@ var projectionRules = map[string]projectionRule{
 	},
 	"xiaohongshu.get_note_detail": {
 		Compact: projectionSpec{
-			Scalars: []fieldRule{
-				{From: "note_id", To: "note_id"},
-				{From: "title", To: "title"},
-				{From: "desc", To: "desc"},
-				{From: "liked_count", To: "liked_count"},
-				{From: "collected_count", To: "collected_count"},
-				{From: "comment_count", To: "comment_count"},
-				{From: "author.nickname", To: "author.nickname"},
-				{From: "tags", To: "tags"},
-			},
+			PassThrough: true,
 		},
 	},
 	"xiaohongshu.search_notes": {

@@ -43,9 +43,10 @@ type projectionRule struct {
 }
 
 type projectionSpec struct {
-	Scalars []fieldRule
-	Lists   []listRule
-	Tables  []tableRule
+	PassThrough bool
+	Scalars     []fieldRule
+	Lists       []listRule
+	Tables      []tableRule
 }
 
 type fieldRule struct {
@@ -123,6 +124,9 @@ func projectCapability(capability string, data json.RawMessage, format Format) (
 }
 
 func applyProjectionSpec(payload any, spec projectionSpec) (any, error) {
+	if spec.PassThrough {
+		return payload, nil
+	}
 	if len(spec.Scalars) == 0 && len(spec.Lists) == 1 && len(spec.Tables) == 0 && spec.Lists[0].To == "$root" {
 		return projectList(getRoot(payload), spec.Lists[0])
 	}
