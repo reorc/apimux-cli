@@ -14,7 +14,7 @@ Install a specific version:
 
 ```bash
 curl -fsSL https://github.com/reorc/apimux-cli/releases/latest/download/install.sh | \
-  APIMUX_VERSION=v0.1.0 sh
+  APIMUX_VERSION=v1.0.0 sh
 ```
 
 The installer:
@@ -110,7 +110,7 @@ Build snapshot release archives and checksums:
 make release-build
 ```
 
-Version metadata is injected via git tags and commit info. The intended first public release line starts at `v0.1.0`.
+Version metadata is injected via git tags and commit info. The current stable release line starts at `v1.0.0`.
 
 ## Skills
 
