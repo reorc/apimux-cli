@@ -33,6 +33,30 @@ json_get() {
   printf '%s' "$input" | "$python_bin" -c 'import json,sys; data=json.load(sys.stdin); print(data.get(sys.argv[1], ""))' "$key"
 }
 
+trim() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
+normalize_release_version() {
+  local raw="$1"
+  local value
+  value="$(trim "$raw")"
+  if [[ -z "$value" ]]; then
+    return 1
+  fi
+
+  if [[ "$value" == v* ]]; then
+    RELEASE_TAG="$value"
+    RELEASE_VERSION="${value#v}"
+  else
+    RELEASE_TAG="v$value"
+    RELEASE_VERSION="$value"
+  fi
+}
+
 detect_os() {
   case "$(uname -s)" in
     Darwin) printf 'darwin' ;;
@@ -85,13 +109,18 @@ if [[ -z "$APIMUX_VERSION" ]]; then
   exit 1
 fi
 
+if ! normalize_release_version "$APIMUX_VERSION"; then
+  printf 'invalid APIMUX_VERSION: %s\n' "$APIMUX_VERSION" >&2
+  exit 1
+fi
+
 if [[ -z "$APIMUX_RELEASE_BASE_URL" ]]; then
   APIMUX_RELEASE_BASE_URL="$DEFAULT_RELEASE_BASE_URL"
 fi
 
-ARCHIVE_NAME="apimux_${APIMUX_VERSION}_${OS_NAME}_${ARCH_NAME}.tar.gz"
-ARCHIVE_URL="${APIMUX_RELEASE_BASE_URL%/}/${APIMUX_VERSION}/${ARCHIVE_NAME}"
-CHECKSUM_URL="${APIMUX_RELEASE_BASE_URL%/}/${APIMUX_VERSION}/apimux_${APIMUX_VERSION}_checksums.txt"
+ARCHIVE_NAME="apimux_${RELEASE_VERSION}_${OS_NAME}_${ARCH_NAME}.tar.gz"
+ARCHIVE_URL="${APIMUX_RELEASE_BASE_URL%/}/${RELEASE_TAG}/${ARCHIVE_NAME}"
+CHECKSUM_URL="${APIMUX_RELEASE_BASE_URL%/}/${RELEASE_TAG}/apimux_${RELEASE_VERSION}_checksums.txt"
 
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -118,7 +147,7 @@ mkdir -p "$APIMUX_INSTALL_DIR"
 tar -C "$TMP_DIR" -xzf "$ARCHIVE_PATH"
 install -m 0755 "$TMP_DIR/apimux" "$APIMUX_INSTALL_DIR/apimux"
 
-printf 'Installed apimux %s to %s/apimux\n' "$APIMUX_VERSION" "$APIMUX_INSTALL_DIR"
+printf 'Installed apimux %s to %s/apimux\n' "$RELEASE_TAG" "$APIMUX_INSTALL_DIR"
 "$APIMUX_INSTALL_DIR/apimux" version
 case ":$PATH:" in
   *":$APIMUX_INSTALL_DIR:"*) ;;
