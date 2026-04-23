@@ -604,6 +604,36 @@ var projectionRules = map[string]projectionRule{
 			},
 		},
 	},
+	"trendcloud.get_market_trend": {
+		Compact: projectionSpec{
+			Lists: []listRule{
+				{
+					From: "$root",
+					To:   "$root",
+				},
+			},
+		},
+	},
+	"trendcloud.get_top_rankings": {
+		Compact: projectionSpec{
+			Lists: []listRule{
+				{
+					From: "$root",
+					To:   "$root",
+				},
+			},
+		},
+	},
+	"trendcloud.search_filter_values": {
+		Compact: projectionSpec{
+			Lists: []listRule{
+				{
+					From: "$root",
+					To:   "$root",
+				},
+			},
+		},
+	},
 	"tiktok.list_comments": {
 		Compact: projectionSpec{
 			Tables: []tableRule{
