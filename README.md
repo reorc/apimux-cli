@@ -91,6 +91,12 @@ apimux completion powershell | Out-String | Invoke-Expression
 
 ## Development
 
+Branch model:
+
+- `develop`: integration branch for day-to-day work
+- `main`: release branch; keep it aligned with the latest stable tag
+- release tags: create only from commits already contained in `main`
+
 Build a local binary:
 
 ```bash
