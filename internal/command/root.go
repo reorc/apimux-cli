@@ -160,6 +160,7 @@ func (r *Root) newCommand(runCtx *runContext) *cobra.Command {
 
 	rootCmd.AddCommand(
 		r.newVersionCommand(),
+		r.newAuthCommand(runCtx),
 		r.newConfigCommand(),
 		r.newCompletionCommand(),
 		r.newUpgradeCommand(),

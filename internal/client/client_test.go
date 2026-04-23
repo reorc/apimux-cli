@@ -198,6 +198,51 @@ func TestClientWrapsTransportErrors(t *testing.T) {
 	}
 }
 
+func TestCLILoginFlowEndpoints(t *testing.T) {
+	var startPath string
+	var pollPath string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/cli-auth/start":
+			startPath = r.URL.Path
+			_, _ = w.Write([]byte(`{"device_code":"dev-1","user_code":"ABCD-EFGH","verification_uri":"https://apimux.test/auth/cli?user_code=ABCD-EFGH","verification_uri_complete":"https://apimux.test/auth/cli?user_code=ABCD-EFGH","expires_in":900,"interval":5}`))
+		case "/api/cli-auth/poll":
+			pollPath = r.URL.Path
+			_, _ = w.Write([]byte(`{"api_key":"secret","api_key_id":"key-1"}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client := NewWithHTTPClient(Config{BaseURL: server.URL}, server.Client())
+
+	startResp, err := client.StartCLILogin(context.Background(), "macbook")
+	if err != nil {
+		t.Fatalf("StartCLILogin() error = %v", err)
+	}
+	if startPath != "/api/cli-auth/start" {
+		t.Fatalf("unexpected start path: %s", startPath)
+	}
+	if startResp.DeviceCode != "dev-1" || startResp.UserCode != "ABCD-EFGH" {
+		t.Fatalf("unexpected start response: %#v", startResp)
+	}
+
+	pollResp, statusCode, err := client.PollCLILogin(context.Background(), "dev-1")
+	if err != nil {
+		t.Fatalf("PollCLILogin() error = %v", err)
+	}
+	if pollPath != "/api/cli-auth/poll" {
+		t.Fatalf("unexpected poll path: %s", pollPath)
+	}
+	if statusCode != http.StatusOK {
+		t.Fatalf("unexpected status code: %d", statusCode)
+	}
+	if pollResp.APIKey != "secret" || pollResp.APIKeyID != "key-1" {
+		t.Fatalf("unexpected poll response: %#v", pollResp)
+	}
+}
+
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
