@@ -381,8 +381,8 @@ func (r *Root) newSchemaCommand(runCtx *runContext) *cobra.Command {
 	schemaCmd := &cobra.Command{
 		Use:     "schema",
 		Short:   "Browse available API endpoints",
-		Long:    "Browse available API endpoints and inspect their parameters.\n\nUse 'schema list' to see available endpoints and 'schema show <endpoint>' to inspect the parameters and options for one endpoint before calling it.",
-		Example: "  apimux schema list\n  apimux schema show reddit.search\n  apimux schema show google_ads.list_ad_creatives",
+		Long:    "Browse available API endpoints and inspect their parameters.\n\nUse 'schema capabilities' to quickly discover available endpoint names, 'schema show <endpoint>' to inspect one endpoint before calling it, and 'schema list' when you need the full schema payload.",
+		Example: "  apimux schema capabilities\n  apimux schema show reddit.search\n  apimux schema list",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			resp, err := runCtx.client.ListSchemas(cmd.Context())
 			return writeServiceResponse(runCtx, resp, err)
@@ -391,7 +391,7 @@ func (r *Root) newSchemaCommand(runCtx *runContext) *cobra.Command {
 
 	listCmd := &cobra.Command{
 		Use:   "list",
-		Short: "List all available endpoints",
+		Short: "List the full schema payload",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			resp, err := runCtx.client.ListSchemas(cmd.Context())
 			return writeServiceResponse(runCtx, resp, err)
@@ -410,53 +410,82 @@ func (r *Root) newSchemaCommand(runCtx *runContext) *cobra.Command {
 
 	capabilitiesCmd := &cobra.Command{
 		Use:   "capabilities",
-		Short: "List capability names only",
-		Long:  "List all available capability names, one per line.\n\nUse this instead of 'schema list' when you only need capability names without full parameter details.",
+		Short: "List capability names for quick discovery",
+		Long:  "List available capability names without the full schema payload.\n\nUse this for fast discovery before drilling into one capability with 'schema show <capability>'.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			resp, err := runCtx.client.ListSchemas(cmd.Context())
-			if err != nil {
-				return writeServiceResponse(runCtx, resp, err)
-			}
-			if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-				return writeServiceResponse(runCtx, resp, nil)
-			}
-
-			var envelope struct {
-				OK   bool `json:"ok"`
-				Data []struct {
-					Name string `json:"name"`
-				} `json:"data"`
-			}
-			if err := json.Unmarshal(resp.Body, &envelope); err != nil || !envelope.OK {
-				return writeServiceResponse(runCtx, resp, nil)
-			}
-
 			asJSON, _ := cmd.Flags().GetBool("json")
-			if asJSON {
-				names := make([]string, 0, len(envelope.Data))
-				for _, s := range envelope.Data {
-					names = append(names, s.Name)
-				}
-				body, err := json.Marshal(names)
-				if err != nil {
-					return err
-				}
-				_, err = fmt.Fprintln(runCtx.stdout, string(body))
-				return err
-			}
-
-			for _, s := range envelope.Data {
-				if _, err := fmt.Fprintln(runCtx.stdout, s.Name); err != nil {
-					return err
-				}
-			}
-			return nil
+			return writeSchemaNames(runCtx, resp, err, asJSON)
 		},
 	}
 	capabilitiesCmd.Flags().Bool("json", false, "Output as JSON array instead of one name per line")
 
 	schemaCmd.AddCommand(listCmd, showCmd, capabilitiesCmd)
 	return schemaCmd
+}
+
+func writeSchemaNames(runCtx *runContext, resp client.Response, err error, asJSON bool) error {
+	if err != nil {
+		return writeServiceResponse(runCtx, resp, err)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return writeServiceResponse(runCtx, resp, nil)
+	}
+
+	names, ok := extractSchemaNames(resp.Body)
+	if !ok {
+		return writeServiceResponse(runCtx, resp, nil)
+	}
+
+	if asJSON {
+		body, err := json.Marshal(names)
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintln(runCtx.stdout, string(body))
+		return err
+	}
+
+	for _, name := range names {
+		if _, err := fmt.Fprintln(runCtx.stdout, name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func extractSchemaNames(body []byte) ([]string, bool) {
+	var listEnvelope struct {
+		OK   bool `json:"ok"`
+		Data struct {
+			Capabilities []struct {
+				Name string `json:"name"`
+			} `json:"capabilities"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &listEnvelope); err == nil && listEnvelope.OK && len(listEnvelope.Data.Capabilities) > 0 {
+		names := make([]string, 0, len(listEnvelope.Data.Capabilities))
+		for _, capability := range listEnvelope.Data.Capabilities {
+			names = append(names, capability.Name)
+		}
+		return names, true
+	}
+
+	var legacyEnvelope struct {
+		OK   bool `json:"ok"`
+		Data []struct {
+			Name string `json:"name"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &legacyEnvelope); err == nil && legacyEnvelope.OK {
+		names := make([]string, 0, len(legacyEnvelope.Data))
+		for _, capability := range legacyEnvelope.Data {
+			names = append(names, capability.Name)
+		}
+		return names, true
+	}
+
+	return nil, false
 }
 
 func (r *Root) newCapabilityCommand(runCtx *runContext) *cobra.Command {

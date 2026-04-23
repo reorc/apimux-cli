@@ -82,7 +82,7 @@ func TestSchemaCapabilitiesOutputsNames(t *testing.T) {
 		if r.URL.Path != "/v1/schema" {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		_, _ = w.Write([]byte(`{"ok":true,"data":[{"name":"amazon.get_product"},{"name":"reddit.search"}]}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"capabilities":[{"name":"amazon.get_product"},{"name":"reddit.search"}]}}`))
 	}))
 	defer server.Close()
 
@@ -117,7 +117,7 @@ func TestSchemaCapabilitiesJSONFlag(t *testing.T) {
 		if r.URL.Path != "/v1/schema" {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		_, _ = w.Write([]byte(`{"ok":true,"data":[{"name":"amazon.get_product"},{"name":"reddit.search"}]}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"capabilities":[{"name":"amazon.get_product"},{"name":"reddit.search"}]}}`))
 	}))
 	defer server.Close()
 

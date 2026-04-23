@@ -48,6 +48,14 @@ apimux amazon get_product --asin B0CM5JV26D --market US
 apimux google_trends get_interest_over_time --q "AI" --geo US
 ```
 
+Discover available capabilities:
+
+```bash
+apimux schema capabilities
+apimux schema show amazon.get_product
+apimux schema list
+```
+
 Useful flags:
 
 - `--debug`: print the sanitized response envelope
