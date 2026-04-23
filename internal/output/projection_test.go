@@ -364,11 +364,14 @@ func TestProjectCapabilityCompactRedditGetPostCommentsCompatShape(t *testing.T) 
 	}
 	columns, _ := items["columns"].([]any)
 	rows, _ := items["rows"].([]any)
-	if len(columns) != 7 || len(rows) != 1 {
+	if len(columns) != 8 || len(rows) != 1 {
 		t.Fatalf("unexpected compat table shape: %#v", items)
 	}
 	if columns[0] != "id" || columns[2] != "body" || columns[4] != "created_at" {
 		t.Fatalf("unexpected compat columns: %#v", columns)
+	}
+	if columns[5] != "permalink" {
+		t.Fatalf("expected permalink column at index 5, got %#v", columns)
 	}
 }
 

@@ -655,7 +655,7 @@ func TestDouyinSearchVideosCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	if got := stdout.String(); !strings.Contains(got, `"columns":["aweme_id","description","create_time","author","like_count","comment_count","share_count"]`) || !strings.Contains(got, `"rows":[]`) {
+	if got := stdout.String(); !strings.Contains(got, `"columns":["aweme_id","description","create_time","share_url","author_id","author","like_count","comment_count","share_count","play_count","duration","ratio"]`) || !strings.Contains(got, `"rows":[]`) {
 		t.Fatalf("expected compact table output, got %s", got)
 	}
 }
@@ -719,7 +719,7 @@ func TestDouyinGetCommentRepliesCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	if got := stdout.String(); !strings.Contains(got, `"columns":["comment_id","text","create_time","author","like_count"]`) || !strings.Contains(got, `"rows":[]`) {
+	if got := stdout.String(); !strings.Contains(got, `"columns":["comment_id","text","create_time","author_id","author","like_count"]`) || !strings.Contains(got, `"rows":[]`) {
 		t.Fatalf("expected compact table output, got %s", got)
 	}
 }
@@ -879,7 +879,7 @@ func TestRedditSearchCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	if got := stdout.String(); !strings.Contains(got, `"columns":["post_id","title","subreddit","score","num_comments","created_at"]`) || !strings.Contains(got, `"rows":[]`) {
+	if got := stdout.String(); !strings.Contains(got, `"columns":["post_id","title","subreddit","author","score","upvote_ratio","num_comments","created_at","url","permalink","thumbnail","is_video"]`) || !strings.Contains(got, `"rows":[]`) {
 		t.Fatalf("expected compact table output, got %s", got)
 	}
 }
@@ -942,7 +942,7 @@ func TestXiaohongshuSearchNotesCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	if got := stdout.String(); !strings.Contains(got, `"columns":["note_id","title","desc","liked_count","collected_count","author"]`) || !strings.Contains(got, `"rows":[]`) {
+	if got := stdout.String(); !strings.Contains(got, `"columns":["note_id","xsec_token","title","description","type","like_count","collect_count","comment_count","author_id","author"]`) || !strings.Contains(got, `"rows":[]`) {
 		t.Fatalf("expected compact table output, got %s", got)
 	}
 }
