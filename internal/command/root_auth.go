@@ -25,7 +25,8 @@ func (r *Root) newAuthCommand(runCtx *runContext) *cobra.Command {
 	var webURL string
 	loginCmd := &cobra.Command{
 		Use:   "login",
-		Short: "Start browser-assisted CLI login",
+		Short: "Start CLI login",
+		Long:  "Start browser-assisted CLI login.\n\nOn SSH/headless servers, use --no-browser to print the authorization URL and code without opening a browser. The CLI also auto-detects common headless environments such as SSH, CI, NO_BROWSER=1, and Linux without DISPLAY, then behaves as if --no-browser was set.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			if strings.TrimSpace(deviceName) == "" {
@@ -44,7 +45,7 @@ func (r *Root) newAuthCommand(runCtx *runContext) *cobra.Command {
 
 			_, _ = fmt.Fprintf(r.stdout, "Visit: %s\n", start.VerificationURIComplete)
 			_, _ = fmt.Fprintf(r.stdout, "Code: %s\n", start.UserCode)
-			if noBrowser {
+			if noBrowser || isHeadlessAuthEnv() {
 				_, _ = fmt.Fprintln(r.stdout, "Open the URL above in your browser to approve access.")
 			} else if err := openBrowser(start.VerificationURIComplete); err != nil {
 				_, _ = fmt.Fprintf(r.stderr, "open browser failed: %v\n", err)
@@ -135,12 +136,39 @@ func (r *Root) newAuthCommand(runCtx *runContext) *cobra.Command {
 			}
 		},
 	}
-	loginCmd.Flags().BoolVar(&noBrowser, "no-browser", false, "Print the URL but do not open a browser")
+	loginCmd.Flags().BoolVar(&noBrowser, "no-browser", false, "Print the URL but do not open a browser; recommended for SSH/headless servers and auto-detected in headless environments")
 	loginCmd.Flags().StringVar(&deviceName, "device-name", "", "Label used when creating the CLI API key")
 	loginCmd.Flags().StringVar(&webURL, "web-url", "", "APIMux web URL used for browser-assisted login; does not persist to config")
 
 	authCmd.AddCommand(loginCmd)
 	return authCmd
+}
+
+func isHeadlessAuthEnv() bool {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("NO_BROWSER")), "1") {
+		return true
+	}
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("CI")), "true") {
+		return true
+	}
+	if strings.TrimSpace(os.Getenv("SSH_CONNECTION")) != "" || strings.TrimSpace(os.Getenv("SSH_TTY")) != "" {
+		return true
+	}
+	if runtime.GOOS == "linux" && strings.TrimSpace(os.Getenv("DISPLAY")) == "" && !isWSL() {
+		return true
+	}
+	return false
+}
+
+func isWSL() bool {
+	if strings.TrimSpace(os.Getenv("WSL_DISTRO_NAME")) != "" || strings.TrimSpace(os.Getenv("WSL_INTEROP")) != "" {
+		return true
+	}
+	body, err := os.ReadFile("/proc/version")
+	if err != nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(string(body)), "microsoft")
 }
 
 func openBrowser(target string) error {
