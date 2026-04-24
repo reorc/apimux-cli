@@ -203,12 +203,16 @@ func (r *Root) newConfigCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			body, err := json.MarshalIndent(map[string]any{
+			payload := map[string]any{
 				"path":     loaded.Path,
 				"base_url": loaded.Config.BaseURL,
 				"api_key":  redact(loaded.Config.APIKey),
 				"sources":  loaded.Sources,
-			}, "", "  ")
+			}
+			if loaded.LegacyPath != "" {
+				payload["legacy_path"] = loaded.LegacyPath
+			}
+			body, err := json.MarshalIndent(payload, "", "  ")
 			if err != nil {
 				return err
 			}
@@ -230,10 +234,23 @@ func (r *Root) newConfigCommand() *cobra.Command {
 					message:  "config set requires --base-url and/or --api-key",
 				}
 			}
+			loaded, err := config.LoadDetailed()
+			if err != nil {
+				return err
+			}
 			if err := config.Save(config.Config{BaseURL: baseURL, APIKey: apiKey}); err != nil {
 				return err
 			}
-			_, err := fmt.Fprintln(r.stdout, `{"ok":true}`)
+			payload := map[string]any{"ok": true}
+			if loaded.LegacyPath != "" {
+				payload["migrated_from"] = loaded.LegacyPath
+				payload["path"] = loaded.Path
+			}
+			body, err := json.Marshal(payload)
+			if err != nil {
+				return err
+			}
+			_, err = fmt.Fprintln(r.stdout, string(body))
 			return err
 		},
 	}

@@ -82,10 +82,21 @@ func (r *Root) newAuthCommand(runCtx *runContext) *cobra.Command {
 							message:  "login completed without an API key",
 						}
 					}
+					loaded, err := config.LoadDetailed()
+					if err != nil {
+						return err
+					}
 					if err := config.Save(config.Config{APIKey: result.APIKey}); err != nil {
 						return err
 					}
-					_, _ = fmt.Fprintln(r.stdout, "Authorized. API key saved to local config.")
+					configPath, err := config.Path()
+					if err != nil {
+						return err
+					}
+					if loaded.LegacyPath != "" {
+						_, _ = fmt.Fprintf(r.stdout, "Migrated legacy config from %s to %s\n", loaded.LegacyPath, configPath)
+					}
+					_, _ = fmt.Fprintf(r.stdout, "Authorized. API key saved to %s\n", configPath)
 					return nil
 				case 202:
 					time.Sleep(interval)

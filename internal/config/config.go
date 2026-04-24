@@ -16,9 +16,10 @@ type Config struct {
 }
 
 type Loaded struct {
-	Config  Config            `json:"config"`
-	Path    string            `json:"path"`
-	Sources map[string]string `json:"sources"`
+	Config     Config            `json:"config"`
+	Path       string            `json:"path"`
+	LegacyPath string            `json:"legacy_path,omitempty"`
+	Sources    map[string]string `json:"sources"`
 }
 
 func Load() (Config, error) {
@@ -38,17 +39,17 @@ func LoadDetailed() (Loaded, error) {
 		"api_key":  "unset",
 	}
 
-	if fileCfg, err := readFile(); err != nil {
+	filePath, legacyPath, fileCfg, usedLegacy, err := readFile()
+	if err != nil {
 		return Loaded{}, err
-	} else {
-		if fileCfg.BaseURL != "" {
-			cfg.BaseURL = fileCfg.BaseURL
-			sources["base_url"] = "file"
-		}
-		if fileCfg.APIKey != "" {
-			cfg.APIKey = fileCfg.APIKey
-			sources["api_key"] = "file"
-		}
+	}
+	if fileCfg.BaseURL != "" {
+		cfg.BaseURL = fileCfg.BaseURL
+		sources["base_url"] = "file"
+	}
+	if fileCfg.APIKey != "" {
+		cfg.APIKey = fileCfg.APIKey
+		sources["api_key"] = "file"
 	}
 
 	if value := strings.TrimSpace(os.Getenv("APIMUX_BASE_URL")); value != "" {
@@ -60,20 +61,19 @@ func LoadDetailed() (Loaded, error) {
 		sources["api_key"] = "env"
 	}
 
-	configPath, err := path()
-	if err != nil {
-		return Loaded{}, err
-	}
-
-	return Loaded{
+	loaded := Loaded{
 		Config:  cfg,
-		Path:    configPath,
+		Path:    filePath,
 		Sources: sources,
-	}, nil
+	}
+	if usedLegacy {
+		loaded.LegacyPath = legacyPath
+	}
+	return loaded, nil
 }
 
 func Save(update Config) error {
-	current, err := readFile()
+	_, _, current, _, err := readFile()
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func Save(update Config) error {
 		current.APIKey = strings.TrimSpace(update.APIKey)
 	}
 
-	path, err := path()
+	path, err := Path()
 	if err != nil {
 		return err
 	}
@@ -101,36 +101,57 @@ func Save(update Config) error {
 }
 
 func Path() (string, error) {
-	return path()
+	primaryPath, _, err := paths()
+	return primaryPath, err
 }
 
-func readFile() (Config, error) {
-	path, err := path()
+func readFile() (string, string, Config, bool, error) {
+	primaryPath, legacyPath, err := paths()
 	if err != nil {
-		return Config{}, err
+		return "", "", Config{}, false, err
 	}
-	body, err := os.ReadFile(path)
+	body, err := os.ReadFile(primaryPath)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return Config{}, nil
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", "", Config{}, false, err
 		}
-		return Config{}, err
+		if legacyPath == "" || legacyPath == primaryPath {
+			return primaryPath, legacyPath, Config{}, false, nil
+		}
+		legacyBody, legacyErr := os.ReadFile(legacyPath)
+		if legacyErr != nil {
+			if errors.Is(legacyErr, os.ErrNotExist) {
+				return primaryPath, legacyPath, Config{}, false, nil
+			}
+			return "", "", Config{}, false, legacyErr
+		}
+		var legacyCfg Config
+		if err := json.Unmarshal(legacyBody, &legacyCfg); err != nil {
+			return "", "", Config{}, false, err
+		}
+		return primaryPath, legacyPath, legacyCfg, true, nil
 	}
 
 	var cfg Config
 	if err := json.Unmarshal(body, &cfg); err != nil {
-		return Config{}, err
+		return "", "", Config{}, false, err
 	}
-	return cfg, nil
+	return primaryPath, legacyPath, cfg, false, nil
 }
 
-func path() (string, error) {
+func paths() (string, string, error) {
 	if dir := strings.TrimSpace(os.Getenv(envConfigDir)); dir != "" {
-		return filepath.Join(dir, "config.json"), nil
+		path := filepath.Join(dir, "config.json")
+		return path, "", nil
 	}
-	base, err := os.UserConfigDir()
+	home, err := os.UserHomeDir()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return filepath.Join(base, "apimux", "config.json"), nil
+	primaryPath := filepath.Join(home, ".apimux", "config.json")
+	legacyBase, err := os.UserConfigDir()
+	if err != nil {
+		return primaryPath, "", nil
+	}
+	return primaryPath, filepath.Join(legacyBase, "apimux", "config.json"), nil
 }
