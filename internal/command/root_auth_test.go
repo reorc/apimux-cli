@@ -63,3 +63,54 @@ func TestAuthLoginNoBrowserSavesKey(t *testing.T) {
 		t.Fatalf("expected success message, got %s", stdout.String())
 	}
 }
+
+func TestAuthLoginWebURLDoesNotPersistBaseURL(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("APIMUX_CONFIG_DIR", tempDir)
+
+	if err := config.Save(config.Config{BaseURL: "http://service.example"}); err != nil {
+		t.Fatalf("seed config: %v", err)
+	}
+
+	pollCalls := 0
+	webServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/cli-auth/start":
+			_, _ = w.Write([]byte(`{"device_code":"dev-1","user_code":"ABCD-EFGH","verification_uri":"https://apimux.test/auth/cli?user_code=ABCD-EFGH","verification_uri_complete":"https://apimux.test/auth/cli?user_code=ABCD-EFGH","expires_in":900,"interval":0}`))
+		case "/api/cli-auth/poll":
+			pollCalls++
+			_, _ = w.Write([]byte(`{"api_key":"saved-key","api_key_id":"key-1"}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer webServer.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	root := NewRoot(&stdout, &stderr)
+
+	exitCode, err := root.Execute(context.Background(), []string{
+		"auth", "login", "--no-browser", "--web-url", webServer.URL,
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	if pollCalls == 0 {
+		t.Fatalf("expected polling against web URL")
+	}
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.BaseURL != "http://service.example" {
+		t.Fatalf("expected service base URL to remain unchanged, got %#v", cfg)
+	}
+	if cfg.APIKey != "saved-key" {
+		t.Fatalf("expected saved API key, got %#v", cfg)
+	}
+}

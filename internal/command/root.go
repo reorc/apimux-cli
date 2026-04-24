@@ -1,7 +1,6 @@
 package command
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -242,49 +241,11 @@ func (r *Root) newConfigCommand() *cobra.Command {
 	setCmd.Flags().StringVar(&apiKey, "api-key", "", "Persist the APIMux API key")
 
 	initCmd := &cobra.Command{
-		Use:   "init",
-		Short: "Set up CLI credentials and server URL",
+		Use:        "init",
+		Short:      "Deprecated: use auth login or config set",
+		Deprecated: "use `apimux auth login`; for CI/manual keys use `apimux config set --api-key ... --base-url ...`",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			loaded, err := config.LoadDetailed()
-			if err != nil {
-				return err
-			}
-
-			reader := bufio.NewReader(r.stdin)
-			baseURL, err := promptValue(reader, r.stdout, "APIMux service base URL", loaded.Config.BaseURL, false)
-			if err != nil {
-				return err
-			}
-			apiKey, err := promptValue(reader, r.stdout, "APIMux API key", "", true)
-			if err != nil {
-				return err
-			}
-			if strings.TrimSpace(apiKey) == "" {
-				return &cliError{
-					exitCode: 2,
-					code:     "cli_invalid_config",
-					message:  "interactive config requires a non-empty API key",
-				}
-			}
-			if err := config.Save(config.Config{BaseURL: baseURL, APIKey: apiKey}); err != nil {
-				return err
-			}
-
-			updated, err := config.LoadDetailed()
-			if err != nil {
-				return err
-			}
-			body, err := json.MarshalIndent(map[string]any{
-				"ok":       true,
-				"path":     updated.Path,
-				"base_url": updated.Config.BaseURL,
-				"api_key":  redact(updated.Config.APIKey),
-				"sources":  updated.Sources,
-			}, "", "  ")
-			if err != nil {
-				return err
-			}
-			_, err = fmt.Fprintln(r.stdout, string(body))
+			_, err := fmt.Fprintln(r.stdout, "`apimux config init` is deprecated. Use `apimux auth login` for onboarding. For CI/manual keys, use `apimux config set --api-key ... --base-url ...`.")
 			return err
 		},
 	}

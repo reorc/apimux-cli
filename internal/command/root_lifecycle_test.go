@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/reorc/apimux-cli/internal/buildinfo"
-	"github.com/reorc/apimux-cli/internal/config"
 )
 
 func TestVersionCommandPrintsBuildMetadata(t *testing.T) {
@@ -46,15 +45,14 @@ func TestVersionCommandPrintsBuildMetadata(t *testing.T) {
 	}
 }
 
-func TestConfigInitBootstrapsCredentialsInteractively(t *testing.T) {
+func TestConfigInitIsDeprecatedOnboardingAlias(t *testing.T) {
 	tempDir := t.TempDir()
 	t.Setenv("APIMUX_CONFIG_DIR", tempDir)
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	input := bytes.NewBufferString("http://service.example\nsecret-key\n")
 
-	root := NewRootWithIO(input, &stdout, &stderr)
+	root := NewRoot(&stdout, &stderr)
 	exitCode, err := root.Execute(context.Background(), []string{"config", "init"})
 	if err != nil {
 		t.Fatalf("execute root: %v", err)
@@ -62,16 +60,11 @@ func TestConfigInitBootstrapsCredentialsInteractively(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-
-	cfg, err := config.Load()
-	if err != nil {
-		t.Fatalf("load config: %v", err)
+	if !strings.Contains(stdout.String(), "apimux auth login") {
+		t.Fatalf("expected auth login guidance, got %s", stdout.String())
 	}
-	if cfg.BaseURL != "http://service.example" || cfg.APIKey != "secret-key" {
-		t.Fatalf("unexpected config: %#v", cfg)
-	}
-	if !strings.Contains(stdout.String(), `"ok": true`) {
-		t.Fatalf("expected success payload, got %s", stdout.String())
+	if !strings.Contains(stdout.String(), "apimux config set --api-key") {
+		t.Fatalf("expected manual config fallback guidance, got %s", stdout.String())
 	}
 }
 
@@ -134,12 +127,11 @@ func TestConfigInitFollowedByGoogleTrendsUsesSavedConfig(t *testing.T) {
 	}))
 	defer server.Close()
 
-	initInput := bytes.NewBufferString(server.URL + "\nsaved-key\n")
 	var initStdout bytes.Buffer
 	var initStderr bytes.Buffer
 
-	initRoot := NewRootWithIO(initInput, &initStdout, &initStderr)
-	exitCode, err := initRoot.Execute(context.Background(), []string{"config", "init"})
+	initRoot := NewRoot(&initStdout, &initStderr)
+	exitCode, err := initRoot.Execute(context.Background(), []string{"config", "set", "--base-url", server.URL, "--api-key", "saved-key"})
 	if err != nil {
 		t.Fatalf("execute init: %v", err)
 	}

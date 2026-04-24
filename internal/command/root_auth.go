@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/reorc/apimux-cli/internal/client"
 	"github.com/reorc/apimux-cli/internal/config"
 	"github.com/spf13/cobra"
 )
@@ -21,6 +22,7 @@ func (r *Root) newAuthCommand(runCtx *runContext) *cobra.Command {
 
 	var noBrowser bool
 	var deviceName string
+	var webURL string
 	loginCmd := &cobra.Command{
 		Use:   "login",
 		Short: "Start browser-assisted CLI login",
@@ -30,8 +32,12 @@ func (r *Root) newAuthCommand(runCtx *runContext) *cobra.Command {
 				host, _ := os.Hostname()
 				deviceName = host
 			}
+			authClient := runCtx.client
+			if strings.TrimSpace(webURL) != "" {
+				authClient = client.New(client.Config{BaseURL: strings.TrimSpace(webURL)})
+			}
 
-			start, err := runCtx.client.StartCLILogin(ctx, deviceName)
+			start, err := authClient.StartCLILogin(ctx, deviceName)
 			if err != nil {
 				return err
 			}
@@ -61,7 +67,7 @@ func (r *Root) newAuthCommand(runCtx *runContext) *cobra.Command {
 				}
 
 				pollCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-				result, statusCode, err := runCtx.client.PollCLILogin(pollCtx, start.DeviceCode)
+				result, statusCode, err := authClient.PollCLILogin(pollCtx, start.DeviceCode)
 				cancel()
 				if err != nil {
 					return err
@@ -76,7 +82,7 @@ func (r *Root) newAuthCommand(runCtx *runContext) *cobra.Command {
 							message:  "login completed without an API key",
 						}
 					}
-					if err := config.Save(config.Config{BaseURL: runCtx.cfg.BaseURL, APIKey: result.APIKey}); err != nil {
+					if err := config.Save(config.Config{APIKey: result.APIKey}); err != nil {
 						return err
 					}
 					_, _ = fmt.Fprintln(r.stdout, "Authorized. API key saved to local config.")
@@ -120,6 +126,7 @@ func (r *Root) newAuthCommand(runCtx *runContext) *cobra.Command {
 	}
 	loginCmd.Flags().BoolVar(&noBrowser, "no-browser", false, "Print the URL but do not open a browser")
 	loginCmd.Flags().StringVar(&deviceName, "device-name", "", "Label used when creating the CLI API key")
+	loginCmd.Flags().StringVar(&webURL, "web-url", "", "APIMux web URL used for browser-assisted login; does not persist to config")
 
 	authCmd.AddCommand(loginCmd)
 	return authCmd

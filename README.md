@@ -35,11 +35,13 @@ curl -fsSL https://github.com/reorc/apimux-cli/releases/latest/download/install.
 
 ## Quickstart
 
-Point the CLI at your APIMux service:
+Authorize the CLI:
 
 ```bash
-apimux config init
+apimux auth login
 ```
+
+For CI or manual API key setup, use `apimux config set --api-key ... --base-url ...`.
 
 Run a capability:
 

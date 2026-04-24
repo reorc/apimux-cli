@@ -21,4 +21,4 @@ make release-build
 
 Local config is stored under `APIMUX_CONFIG_DIR` when set, otherwise the default user config path.
 
-Use `apimux config init` to bootstrap `base_url` and `api_key` for local testing.
+Use `apimux auth login --web-url http://localhost:<port>` to exercise browser-assisted CLI auth against a local web app without persisting the web URL. For CI or manual API key setup, use `apimux config set --base-url ... --api-key ...`.
