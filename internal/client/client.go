@@ -22,6 +22,23 @@ type Response struct {
 	Body       []byte
 }
 
+type CLILoginStartResponse struct {
+	DeviceCode              string `json:"device_code"`
+	UserCode                string `json:"user_code"`
+	VerificationURI         string `json:"verification_uri"`
+	VerificationURIComplete string `json:"verification_uri_complete"`
+	ExpiresIn               int    `json:"expires_in"`
+	Interval                int    `json:"interval"`
+}
+
+type CLILoginPollResponse struct {
+	APIKey   string `json:"api_key"`
+	APIKeyID string `json:"api_key_id"`
+	Status   string `json:"status"`
+	Interval int    `json:"interval"`
+	Error    string `json:"error"`
+}
+
 type Client struct {
 	baseURL    string
 	apiKey     string
@@ -90,6 +107,51 @@ func (c *Client) ListSchemas(ctx context.Context) (Response, error) {
 
 func (c *Client) GetSchema(ctx context.Context, capability string) (Response, error) {
 	return c.doRequest(ctx, http.MethodGet, c.baseURL+"/v1/schema/"+capability, nil)
+}
+
+func (c *Client) StartCLILogin(ctx context.Context, deviceName string) (CLILoginStartResponse, error) {
+	body, err := json.Marshal(map[string]any{
+		"deviceName": deviceName,
+	})
+	if err != nil {
+		return CLILoginStartResponse{}, err
+	}
+
+	resp, err := c.doRequest(ctx, http.MethodPost, c.baseURL+"/api/cli-auth/start", body)
+	if err != nil {
+		return CLILoginStartResponse{}, err
+	}
+	if resp.StatusCode >= 400 {
+		return CLILoginStartResponse{}, fmt.Errorf("start login failed with status %d", resp.StatusCode)
+	}
+
+	var payload CLILoginStartResponse
+	if err := json.Unmarshal(resp.Body, &payload); err != nil {
+		return CLILoginStartResponse{}, err
+	}
+	return payload, nil
+}
+
+func (c *Client) PollCLILogin(ctx context.Context, deviceCode string) (CLILoginPollResponse, int, error) {
+	body, err := json.Marshal(map[string]any{
+		"device_code": deviceCode,
+	})
+	if err != nil {
+		return CLILoginPollResponse{}, 0, err
+	}
+
+	resp, err := c.doRequest(ctx, http.MethodPost, c.baseURL+"/api/cli-auth/poll", body)
+	if err != nil {
+		return CLILoginPollResponse{}, 0, err
+	}
+
+	var payload CLILoginPollResponse
+	if len(resp.Body) > 0 {
+		if err := json.Unmarshal(resp.Body, &payload); err != nil {
+			return CLILoginPollResponse{}, resp.StatusCode, err
+		}
+	}
+	return payload, resp.StatusCode, nil
 }
 
 func (c *Client) doRequest(ctx context.Context, method, targetURL string, body []byte) (Response, error) {

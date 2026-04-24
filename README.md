@@ -35,11 +35,21 @@ curl -fsSL https://github.com/reorc/apimux-cli/releases/latest/download/install.
 
 ## Quickstart
 
-Point the CLI at your APIMux service:
+Authorize the CLI:
 
 ```bash
-apimux config init
+apimux auth login
 ```
+
+On SSH/headless servers, print the authorization URL instead of opening a browser:
+
+```bash
+apimux auth login --no-browser
+```
+
+`auth login` also auto-detects common headless environments such as SSH, CI, `NO_BROWSER=1`, and Linux without `$DISPLAY`.
+
+For CI or manual API key setup, use `apimux config set --api-key ... --base-url ...`.
 
 Run a capability:
 

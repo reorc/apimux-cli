@@ -1,0 +1,193 @@
+package command
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"runtime"
+	"strings"
+	"time"
+
+	"github.com/reorc/apimux-cli/internal/client"
+	"github.com/reorc/apimux-cli/internal/config"
+	"github.com/spf13/cobra"
+)
+
+func (r *Root) newAuthCommand(runCtx *runContext) *cobra.Command {
+	authCmd := &cobra.Command{
+		Use:   "auth",
+		Short: "Authenticate the CLI",
+	}
+
+	var noBrowser bool
+	var deviceName string
+	var webURL string
+	loginCmd := &cobra.Command{
+		Use:   "login",
+		Short: "Start CLI login",
+		Long:  "Start browser-assisted CLI login.\n\nOn SSH/headless servers, use --no-browser to print the authorization URL and code without opening a browser. The CLI also auto-detects common headless environments such as SSH, CI, NO_BROWSER=1, and Linux without DISPLAY, then behaves as if --no-browser was set.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			if strings.TrimSpace(deviceName) == "" {
+				host, _ := os.Hostname()
+				deviceName = host
+			}
+			authClient := runCtx.client
+			if strings.TrimSpace(webURL) != "" {
+				authClient = client.New(client.Config{BaseURL: strings.TrimSpace(webURL)})
+			}
+
+			start, err := authClient.StartCLILogin(ctx, deviceName)
+			if err != nil {
+				return err
+			}
+
+			_, _ = fmt.Fprintf(r.stdout, "Visit: %s\n", start.VerificationURIComplete)
+			_, _ = fmt.Fprintf(r.stdout, "Code: %s\n", start.UserCode)
+			if noBrowser || isHeadlessAuthEnv() {
+				_, _ = fmt.Fprintln(r.stdout, "Open the URL above in your browser to approve access.")
+			} else if err := openBrowser(start.VerificationURIComplete); err != nil {
+				_, _ = fmt.Fprintf(r.stderr, "open browser failed: %v\n", err)
+			}
+			_, _ = fmt.Fprintln(r.stdout, "Waiting for authorization...")
+
+			interval := time.Duration(start.Interval) * time.Second
+			if interval <= 0 {
+				interval = 5 * time.Second
+			}
+			deadline := time.Now().Add(time.Duration(start.ExpiresIn) * time.Second)
+
+			for {
+				if time.Now().After(deadline) {
+					return &cliError{
+						exitCode: 1,
+						code:     "cli_auth_expired",
+						message:  "login session expired before approval",
+					}
+				}
+
+				pollCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+				result, statusCode, err := authClient.PollCLILogin(pollCtx, start.DeviceCode)
+				cancel()
+				if err != nil {
+					return err
+				}
+
+				switch statusCode {
+				case 200:
+					if strings.TrimSpace(result.APIKey) == "" {
+						return &cliError{
+							exitCode: 1,
+							code:     "cli_auth_missing_key",
+							message:  "login completed without an API key",
+						}
+					}
+					loaded, err := config.LoadDetailed()
+					if err != nil {
+						return err
+					}
+					if err := config.Save(config.Config{APIKey: result.APIKey}); err != nil {
+						return err
+					}
+					configPath, err := config.Path()
+					if err != nil {
+						return err
+					}
+					if loaded.LegacyPath != "" {
+						_, _ = fmt.Fprintf(r.stdout, "Migrated legacy config from %s to %s\n", loaded.LegacyPath, configPath)
+					}
+					_, _ = fmt.Fprintf(r.stdout, "Authorized. API key saved to %s\n", configPath)
+					return nil
+				case 202:
+					time.Sleep(interval)
+					continue
+				case 403:
+					return &cliError{
+						exitCode: 1,
+						code:     "cli_auth_denied",
+						message:  "login request was denied",
+					}
+				case 404:
+					return &cliError{
+						exitCode: 1,
+						code:     "cli_auth_invalid_device_code",
+						message:  "login request is invalid",
+					}
+				case 409:
+					return &cliError{
+						exitCode: 1,
+						code:     "cli_auth_consumed",
+						message:  "login request has already been consumed",
+					}
+				case 410:
+					return &cliError{
+						exitCode: 1,
+						code:     "cli_auth_expired",
+						message:  "login session expired before approval",
+					}
+				default:
+					return &cliError{
+						exitCode: 1,
+						code:     "cli_auth_failed",
+						message:  "login polling failed",
+					}
+				}
+			}
+		},
+	}
+	loginCmd.Flags().BoolVar(&noBrowser, "no-browser", false, "Print the URL but do not open a browser; recommended for SSH/headless servers and auto-detected in headless environments")
+	loginCmd.Flags().StringVar(&deviceName, "device-name", "", "Label used when creating the CLI API key")
+	loginCmd.Flags().StringVar(&webURL, "web-url", "", "APIMux web URL used for browser-assisted login; does not persist to config")
+
+	authCmd.AddCommand(loginCmd)
+	return authCmd
+}
+
+func isHeadlessAuthEnv() bool {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("NO_BROWSER")), "1") {
+		return true
+	}
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("CI")), "true") {
+		return true
+	}
+	if strings.TrimSpace(os.Getenv("SSH_CONNECTION")) != "" || strings.TrimSpace(os.Getenv("SSH_TTY")) != "" {
+		return true
+	}
+	if runtime.GOOS == "linux" && strings.TrimSpace(os.Getenv("DISPLAY")) == "" && !isWSL() {
+		return true
+	}
+	return false
+}
+
+func isWSL() bool {
+	if strings.TrimSpace(os.Getenv("WSL_DISTRO_NAME")) != "" || strings.TrimSpace(os.Getenv("WSL_INTEROP")) != "" {
+		return true
+	}
+	body, err := os.ReadFile("/proc/version")
+	if err != nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(string(body)), "microsoft")
+}
+
+func openBrowser(target string) error {
+	var command string
+	var args []string
+
+	switch runtime.GOOS {
+	case "darwin":
+		command = "open"
+		args = []string{target}
+	case "linux":
+		command = "xdg-open"
+		args = []string{target}
+	case "windows":
+		command = "rundll32"
+		args = []string{"url.dll,FileProtocolHandler", target}
+	default:
+		return fmt.Errorf("unsupported platform for browser launch: %s", runtime.GOOS)
+	}
+
+	return exec.Command(command, args...).Start()
+}

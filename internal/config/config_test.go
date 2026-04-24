@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -39,6 +40,92 @@ func TestSaveWritesConfigFile(t *testing.T) {
 	}
 	if cfg.BaseURL != "http://127.0.0.1:8081" || cfg.APIKey != "abc" {
 		t.Fatalf("unexpected config: %#v", cfg)
+	}
+}
+
+func TestPathDefaultsToHomeApimuxConfig(t *testing.T) {
+	t.Setenv(envConfigDir, "")
+	homeDir := t.TempDir()
+	t.Setenv("HOME", homeDir)
+
+	path, err := Path()
+	if err != nil {
+		t.Fatalf("config path: %v", err)
+	}
+
+	expected := filepath.Join(homeDir, ".apimux", "config.json")
+	if path != expected {
+		t.Fatalf("expected %s, got %s", expected, path)
+	}
+}
+
+func TestLoadFallsBackToLegacyUserConfigPath(t *testing.T) {
+	t.Setenv(envConfigDir, "")
+	homeDir := t.TempDir()
+	t.Setenv("HOME", homeDir)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(homeDir, ".config"))
+
+	legacyBase, err := os.UserConfigDir()
+	if err != nil {
+		t.Fatalf("user config dir: %v", err)
+	}
+	legacyPath := filepath.Join(legacyBase, "apimux", "config.json")
+	if err := os.MkdirAll(filepath.Dir(legacyPath), 0o755); err != nil {
+		t.Fatalf("mkdir legacy config dir: %v", err)
+	}
+	if err := os.WriteFile(legacyPath, []byte(`{"base_url":"http://legacy.example","api_key":"legacy-key"}`), 0o600); err != nil {
+		t.Fatalf("write legacy config: %v", err)
+	}
+
+	loaded, err := LoadDetailed()
+	if err != nil {
+		t.Fatalf("load detailed: %v", err)
+	}
+
+	expectedPath := filepath.Join(homeDir, ".apimux", "config.json")
+	if loaded.Path != expectedPath {
+		t.Fatalf("expected primary path %s, got %s", expectedPath, loaded.Path)
+	}
+	if loaded.LegacyPath != legacyPath {
+		t.Fatalf("expected legacy path %s, got %s", legacyPath, loaded.LegacyPath)
+	}
+	if loaded.Config.BaseURL != "http://legacy.example" || loaded.Config.APIKey != "legacy-key" {
+		t.Fatalf("unexpected config: %#v", loaded.Config)
+	}
+}
+
+func TestSaveReadsLegacyButWritesPrimaryPath(t *testing.T) {
+	t.Setenv(envConfigDir, "")
+	homeDir := t.TempDir()
+	t.Setenv("HOME", homeDir)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(homeDir, ".config"))
+
+	legacyBase, err := os.UserConfigDir()
+	if err != nil {
+		t.Fatalf("user config dir: %v", err)
+	}
+	legacyPath := filepath.Join(legacyBase, "apimux", "config.json")
+	if err := os.MkdirAll(filepath.Dir(legacyPath), 0o755); err != nil {
+		t.Fatalf("mkdir legacy config dir: %v", err)
+	}
+	if err := os.WriteFile(legacyPath, []byte(`{"base_url":"http://legacy.example","api_key":"legacy-key"}`), 0o600); err != nil {
+		t.Fatalf("write legacy config: %v", err)
+	}
+
+	if err := Save(Config{APIKey: "new-key"}); err != nil {
+		t.Fatalf("save config: %v", err)
+	}
+
+	primaryPath := filepath.Join(homeDir, ".apimux", "config.json")
+	body, err := os.ReadFile(primaryPath)
+	if err != nil {
+		t.Fatalf("read primary config: %v", err)
+	}
+	if !strings.Contains(string(body), `"base_url": "http://legacy.example"`) {
+		t.Fatalf("expected legacy base URL preserved in primary config, got %s", string(body))
+	}
+	if !strings.Contains(string(body), `"api_key": "new-key"`) {
+		t.Fatalf("expected new API key in primary config, got %s", string(body))
 	}
 }
 

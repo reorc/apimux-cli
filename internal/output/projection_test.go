@@ -3,6 +3,7 @@ package output
 import (
 	"encoding/json"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -202,6 +203,78 @@ func TestProjectCapabilityCompactGoogleTrends(t *testing.T) {
 	}
 	if !strings.Contains(text, `"regions":[{"geo":"US-CA","name":"California","values":[{"query":"AI","value":60}]}]`) {
 		t.Fatalf("expected regions preserved, got %s", text)
+	}
+}
+
+func TestProjectCapabilityCompactTrendCloudSearchFilterValues(t *testing.T) {
+	payload := json.RawMessage(`[
+		{"label":"饮料 > 咖啡","path":["饮料","咖啡"],"platforms":["douyin","jd"]},
+		{"label":"饮料 > 茶","path":["饮料","茶"],"platforms":["tmall"]}
+	]`)
+
+	body, err := projectCapability("trendcloud.search_filter_values", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+
+	var got []map[string]any
+	var want []map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	if err := json.Unmarshal(payload, &want); err != nil {
+		t.Fatalf("unmarshal expected payload: %v", err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("expected explicit compact projection to preserve canonical list, got %#v want %#v", got, want)
+	}
+}
+
+func TestProjectCapabilityCompactTrendCloudGetMarketTrend(t *testing.T) {
+	payload := json.RawMessage(`[
+		{"period":"2026-01","sales":1234.56,"volume":789,"filters":{"platforms":["douyin"]}},
+		{"period":"2026-02","sales":2234.56,"volume":889,"filters":{"platforms":["douyin"]}}
+	]`)
+
+	body, err := projectCapability("trendcloud.get_market_trend", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+
+	var got []map[string]any
+	var want []map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	if err := json.Unmarshal(payload, &want); err != nil {
+		t.Fatalf("unmarshal expected payload: %v", err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("expected explicit compact projection to preserve canonical trend series, got %#v want %#v", got, want)
+	}
+}
+
+func TestProjectCapabilityCompactTrendCloudGetTopRankings(t *testing.T) {
+	payload := json.RawMessage(`[
+		{"rank":1,"label":"瑞幸","sales":2000.12,"platforms":["tmall"]},
+		{"rank":2,"label":"库迪","sales":1800.34,"platforms":["tmall"]}
+	]`)
+
+	body, err := projectCapability("trendcloud.get_top_rankings", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+
+	var got []map[string]any
+	var want []map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	if err := json.Unmarshal(payload, &want); err != nil {
+		t.Fatalf("unmarshal expected payload: %v", err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("expected explicit compact projection to preserve canonical ranking list, got %#v want %#v", got, want)
 	}
 }
 
@@ -671,6 +744,9 @@ func TestProjectionRulesCoverAllAgentTestCapabilities(t *testing.T) {
 		"amazon.get_category_best_sellers",
 		"amazon.get_category_trend",
 		"google_trends.get_interest_over_time",
+		"trendcloud.search_filter_values",
+		"trendcloud.get_market_trend",
+		"trendcloud.get_top_rankings",
 		"reddit.get_post_detail",
 		"reddit.get_post_comments",
 		"tiktok.shop_products",
