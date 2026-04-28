@@ -26,7 +26,7 @@ Meta Ads Library 数据查询，覆盖广告搜索与广告详情两个核心能
 | Capability | 说明 | 典型场景 |
 |------------|------|----------|
 | `search_ads` | 搜索 Meta Ads Library 广告 | 广告创意研究、竞品广告发现 |
-| `get_ad_detail` | 获取单条广告详情 | EU 透明度信息、政治广告详情下钻 |
+| `get_ad_detail` | 读取 `search_ads` 写入的单条广告快照 | 对已搜索广告做创意详情下钻 |
 
 ---
 
@@ -67,7 +67,7 @@ apimux meta_ads search_ads --q "fitness app" --platforms "facebook,instagram" --
 | `end_date` | string | 广告结束时间 |
 | `is_active` | boolean | 是否活跃 |
 | `categories` | string[] | 广告类别 |
-| `publisher_platforms` | string[] | 广告投放平台 |
+| `publisher_platform` | string[] | 广告投放平台 |
 | `snapshot` | object | 创意摘要，包括正文、标题、链接、卡片、视频等 |
 
 ### 规则
@@ -83,7 +83,12 @@ apimux meta_ads search_ads --q "fitness app" --platforms "facebook,instagram" --
 
 ## meta_ads.get_ad_detail
 
-获取单条 Meta 广告详情。
+读取单条 Meta 广告详情快照。
+
+`get_ad_detail` 是 workflow-only 读取：它只从当前 service 的 workflow store
+读取之前由 `search_ads` 写入的 `CoreMetaAd` item，不会再调用 provider detail
+endpoint。使用时先跑 `search_ads`，从返回结果里选 `ad_id`，再调用
+`get_ad_detail`。
 
 ### 参数
 
@@ -94,6 +99,7 @@ apimux meta_ads search_ads --q "fitness app" --platforms "facebook,instagram" --
 ### CLI 用法
 
 ```bash
+apimux meta_ads search_ads --q "fitness app"
 apimux meta_ads get_ad_detail --ad-id "477570185419072"
 ```
 
@@ -102,15 +108,28 @@ apimux meta_ads get_ad_detail --ad-id "477570185419072"
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `ad_id` | string | 广告 ID |
-| `eu_transparency` | object | EU 透明度信息 |
-| `political_insights` | object | 政治广告洞察信息 |
-| `verified_voice` | object | verified voice 信息 |
+| `page_id` | string | Page ID |
+| `page_name` | string | Page 名称 |
+| `start_date` | string | 广告开始时间 |
+| `end_date` | string | 广告结束时间 |
+| `is_active` | boolean | 是否活跃 |
+| `categories` | string[] | 广告类别 |
+| `entity_type` | string | 实体类型 |
+| `gated_type` | string | gated 状态 |
+| `hide_data_status` | string | 数据隐藏状态 |
+| `publisher_platform` | string[] | 广告投放平台 |
+| `impressions_index` | number | impressions index |
+| `total_active_time` | number | 总活跃时长 |
+| `snapshot` | object | 创意快照，包括正文、标题、链接、卡片、视频等 |
+| `collation_count` | number | collation 数量 |
+| `collation_id` | string | collation ID |
 
 ### 规则
 
 - `ad_id` 必填
-- 广告不存在时返回 `ad_not_found` 错误
-- contract 不要求必须先调用 `search_ads`
+- 必须先通过 `search_ads` 写入 workflow store；不要把它当成 live provider detail 查询
+- store 中不存在该 `ad_id` 时返回 `ad_not_found`，提示先运行 `meta_ads.search_ads`
+- 不返回旧 provider detail 字段：`eu_transparency`、`political_insights`、`verified_voice`
 
 ---
 
