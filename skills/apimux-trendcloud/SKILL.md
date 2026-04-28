@@ -1,7 +1,7 @@
 ---
 name: apimux-trendcloud
 version: 1.0.0
-description: "TrendCloud 中国电商渠道趋势查询。覆盖抖音/京东/天猫的部分市场数据，适合做品牌/品类/系列/SKU/属性层面的份额、排行、趋势与筛选值 discovery，不适合把它当作全网或全平台市场数据源。"
+description: "TrendCloud China e-commerce channel data. Analyze sales, volume, share, rankings, trends, and filter values across Douyin, JD, and Tmall."
 metadata:
   source: trendcloud
   requires:
@@ -11,158 +11,167 @@ metadata:
 
 # TrendCloud
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md)，其中包含响应结构、错误处理等共享规则。**
+Analyze partial China e-commerce channel data across `douyin`, `jd`, and `tmall`. Use this for brand/category/series/SKU/attribute share, rankings, trends, and filter discovery inside the TrendCloud coverage area.
 
-TrendCloud 是一个**中国电商渠道的部分市场数据源**，当前只覆盖这些平台：
-- `douyin`（抖音）
-- `jd`（京东）
-- `tmall`（天猫）
+**Before using:** Read [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure, error handling, partial-failure semantics, and CLI conventions.
 
-它更适合回答这类问题：
-- 某个品牌 / 品类 / 系列 / SKU 在中国主流电商渠道里的**销售额、销量、份额、排行、价格带**怎么样
-- 某个类目在抖音、京东、天猫之间的**趋势差异**是什么
-- 我手里的 filter 名称不确定，想先做 **category / brand / series / sku / attribute discovery**
+TrendCloud is best for questions about China e-commerce channel performance, such as sales, volume, market share, rankings, price bands, and platform differences across Douyin/JD/Tmall.
 
-它**不适合**直接回答这类问题：
-- “中国整个市场”或“全网电商”总体规模
-- Amazon / TikTok Shop / Reddit / Google Trends 之类非中国电商渠道的数据
-- 用户画像、创意内容、评论语义、VOC 这类内容侧问题
+TrendCloud is not a full-market source for:
+- All of China or all online retail channels
+- Amazon, TikTok Shop, Reddit, Google Trends, or other non-China e-commerce sources
+- User profiles, creative content, comments, or VOC analysis
 
-如果用户的问题本质上是：
-- 中国电商渠道里的**品牌/类目格局、排行、份额、趋势** → 优先考虑 TrendCloud
-- 内容热度 / 搜索需求 / 评论反馈 → 应改用其他 source（如 TikTok、Xiaohongshu、Google Trends、Amazon reviews）
+## What you can do
 
-## 快速决策
+- **Discover exact filter values** → `search_filter_values`
+- **View sales or volume trends over time** → `get_market_trend`
+- **Rank brands, categories, series, SKUs, or attributes** → `get_top_rankings`
+- **Compare Douyin/JD/Tmall** → pass `filters.platforms` explicitly
 
-- 不确定某个品类/品牌/系列/SKU/属性怎么写，先用 `search_filter_values`
-- 想看一段时间内销售额或销量走势，使用 `get_market_trend`
-- 想看品牌/品类/系列/SKU/属性排行榜，使用 `get_top_rankings`
-- 如果用户说“抖音 / 京东 / 天猫 哪个平台更强”，优先把 `filters.platforms` 显式带上
-- 如果用户说“中国市场”，先确认他要的是 **TrendCloud 覆盖的中国电商渠道数据**，不要自动上升成“全中国全渠道”
+## Recommended workflow
 
-## 推荐工作流
+1. Use `search_filter_values` to find exact filter labels or paths.
+2. Put returned `label` or `path` values into `filters`.
+3. Use `get_market_trend` for time-series analysis.
+4. Use `get_top_rankings` for leaderboards, share, and category structure.
 
-最常见的可靠流程是：
+When the user gives natural-language terms such as "coffee", "Luckin", or "drip coffee", do not guess filters directly. Run discovery first.
 
-1. 先用 `search_filter_values` 找到精确 filter 值
-2. 再把返回的 `label/path` 填进 `filters`
-3. 用 `get_market_trend` 看趋势
-4. 用 `get_top_rankings` 看头部格局 / 份额 / 排行
+## Available capabilities
 
-尤其当用户给的是自然语言词汇时（如“咖啡”“瑞幸”“挂耳”），**不要直接猜 filter**；先做 discovery，命中率和解释性都会更好。
+| Capability | What it does | When to use |
+|------------|--------------|-------------|
+| `get_market_trend` | Get monthly trend time series | Sales/volume trends and platform comparison |
+| `get_top_rankings` | Get rankings | Brand share, category structure, series/SKU ranking |
+| `search_filter_values` | Discover filter values | Category, brand, series, SKU, and attribute discovery |
 
-## Capabilities 概览
-
-| Capability | 说明 | 典型场景 |
-|------------|------|----------|
-| `get_market_trend` | 市场趋势时序 | 中国电商渠道内的销售额 / 销量走势、平台对比 |
-| `get_top_rankings` | 排行榜查询 | 品牌份额、类目头部格局、系列 / SKU 排行 |
-| `search_filter_values` | 筛选值发现 | category / brand / series / sku / attribute 的 filter discovery |
+---
 
 ## trendcloud.get_market_trend
 
-获取 TrendCloud 月度市场趋势。
+Get monthly market trends from TrendCloud.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `start_month` | string | 否 | 起始月份，`YYYY-MM` |
-| `end_month` | string | 否 | 结束月份，`YYYY-MM` |
-| `metrics` | string[] | 否 | 指标枚举：`sales`、`volume`，默认 `["sales"]` |
-| `filters` | object | 否 | 结构化过滤条件，支持 `platforms/categories/brands/series/skus/attributes` |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `start_month` | string | No | Start month, `YYYY-MM` |
+| `end_month` | string | No | End month, `YYYY-MM` |
+| `metrics` | string[] | No | Metric enum: `sales`, `volume`; default `["sales"]` |
+| `filters` | object | No | Structured filters supporting `platforms`, `categories`, `brands`, `series`, `skus`, and `attributes` |
 
-### CLI 用法
+### CLI usage
 
 ```bash
 apimux trendcloud get_market_trend --start-month "2025-01" --end-month "2025-12"
-apimux trendcloud get_market_trend --metrics "sales,volume" --filters-json '{"platforms":["douyin"],"brands":["瑞幸"]}'
+apimux trendcloud get_market_trend --metrics "sales,volume" --filters-json '{"platforms":["douyin"],"brands":["Luckin"]}'
 ```
 
-### 返回字段
+### Response fields
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `period` | string | 月份，`YYYY-MM` |
-| `sales` | number | 销售额，单位元 |
-| `volume` | integer | 销量 |
+| Field | Type | Description |
+|-------|------|-------------|
+| `period` | string | Month, `YYYY-MM` |
+| `sales` | number | Sales amount in CNY |
+| `volume` | integer | Sales volume |
+
+### Notes
+
+- Amount fields are returned in CNY.
+- `meta.resolved_time_range` explains defaults or clamping.
+- `meta.resolved_filters` explains how filters were resolved.
+
+---
 
 ## trendcloud.get_top_rankings
 
-获取 TrendCloud 排行榜结果。
+Get TrendCloud ranking results.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `entity` | string | 是 | 排行实体：`brand/category/series/sku/attribute` |
-| `metric` | string | 否 | 主排序指标，按 entity 约束 |
-| `start_month` | string | 否 | 起始月份，`YYYY-MM` |
-| `end_month` | string | 否 | 结束月份，`YYYY-MM` |
-| `top_n` | integer | 否 | 返回数量，1-100，默认 20 |
-| `category_level` | string | 否 | 仅 entity=`category` 时可用：`category1/category2/category3` |
-| `filters` | object | 否 | 结构化过滤条件 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entity` | string | Yes | Ranking entity: `brand`, `category`, `series`, `sku`, or `attribute` |
+| `metric` | string | No | Primary sort metric; valid values depend on `entity` |
+| `start_month` | string | No | Start month, `YYYY-MM` |
+| `end_month` | string | No | End month, `YYYY-MM` |
+| `top_n` | integer | No | Number of rows, `1..100`; default `20` |
+| `category_level` | string | No | Only for `entity=category`: `category1`, `category2`, or `category3` |
+| `filters` | object | No | Structured filters |
 
-### CLI 用法
+### CLI usage
 
 ```bash
 apimux trendcloud get_top_rankings --entity "brand" --metric "sales"
 apimux trendcloud get_top_rankings --entity "category" --category-level "category2" --filters-json '{"platforms":["tmall"]}'
 ```
 
-### 返回字段
+### Response fields
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `rank` | integer | 1-based 排名 |
-| `label` | string | 实体展示名称 |
-| `sales` | number | 销售额，单位元 |
-| `volume` | integer | 销量 |
-| `market_share` | number | 市占比 |
-| `avg_price` | number | 平均价格，单位元 |
-| `sales_change_ratio` | number | 销售同比变化 |
-| `volume_change_ratio` | number | 销量同比变化 |
-| `market_share_change_ratio` | number | 市占比同比变化 |
+| Field | Type | Description |
+|-------|------|-------------|
+| `rank` | integer | 1-based rank |
+| `label` | string | Entity display name |
+| `sales` | number | Sales amount in CNY |
+| `volume` | integer | Sales volume |
+| `market_share` | number | Market share |
+| `avg_price` | number | Average price in CNY |
+| `sales_change_ratio` | number | Sales year-over-year change ratio |
+| `volume_change_ratio` | number | Volume year-over-year change ratio |
+| `market_share_change_ratio` | number | Market-share year-over-year change ratio |
+
+### Notes
+
+- Amount fields are returned in CNY.
+- Use `search_filter_values` first when the exact entity/filter label is uncertain.
+
+---
 
 ## trendcloud.search_filter_values
 
-搜索 TrendCloud 的筛选值候选。
+Search for TrendCloud filter-value candidates.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `kind` | string | 是 | `category/brand/series/sku/attribute` |
-| `query` | string | 是 | 搜索关键词 |
-| `platforms` | string[] | 否 | 平台范围：`douyin/jd/tmall` |
-| `categories` | string[] | 否 | 类目 hint |
-| `limit` | integer | 否 | 返回数量，1-50，默认 10 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `kind` | string | Yes | `category`, `brand`, `series`, `sku`, or `attribute` |
+| `query` | string | Yes | Search keyword |
+| `platforms` | string[] | No | Platform scope: `douyin`, `jd`, `tmall` |
+| `categories` | string[] | No | Category hints |
+| `limit` | integer | No | Number of candidates, `1..50`; default `10` |
 
-### CLI 用法
+### CLI usage
 
 ```bash
-apimux trendcloud search_filter_values --kind "category" --query "咖啡"
+apimux trendcloud search_filter_values --kind "category" --query "coffee"
 apimux trendcloud search_filter_values --kind "brand" --query "luckin" --platforms "douyin,jd"
 ```
 
-### 返回字段
+### Response fields
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `label` | string | 显示名称 |
-| `path` | string[] | 树字段返回完整层级路径；简单字段返回 `[label]` |
+| Field | Type | Description |
+|-------|------|-------------|
+| `label` | string | Display name |
+| `path` | string[] | Full hierarchy path for tree fields; `[label]` for simple fields |
 
-## 常见错误
+### Common errors
 
-- 平台不在 `douyin/jd/tmall` 之内 → `invalid_platform`
-- 时间范围格式不是 `YYYY-MM` 或跨度超过 12 个月 → `invalid_time_range`
-- 某个 filter 无法唯一匹配 → `ambiguous_filter`
-- 某个 filter 完全不存在 → `invalid_filter`
-- 并发已满 → `busy`，带 `retry_after_seconds`
+- Platform outside `douyin/jd/tmall` → `invalid_platform`
+- Time range is not `YYYY-MM` or spans more than 12 months → `invalid_time_range`
+- A filter cannot be resolved uniquely → `ambiguous_filter`
+- A filter does not exist → `invalid_filter`
+- Concurrency is full → `busy` with `retry_after_seconds`
 
-## 规则
+### Notes
 
-- 金额字段统一返回 **元**，不会暴露上游分值
-- `meta.resolved_time_range` 会说明默认值或 clamp 行为
-- `meta.resolved_filters` 会说明 filter 实际解析结果
-- 当 tree filter 有歧义时，先用 `search_filter_values` 做 discovery，再重试正式查询
+- If a tree filter is ambiguous, use `search_filter_values` for discovery, then retry the analysis call with the resolved filter.
+- `meta.resolved_filters` explains the actual filter resolution.
+
+---
+
+## General notes
+
+- See [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure, error handling, and partial-failure semantics.
+- TrendCloud covers only the configured China e-commerce channels; do not present it as all-channel China market data.

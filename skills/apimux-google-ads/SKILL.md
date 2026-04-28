@@ -1,7 +1,7 @@
 ---
 name: apimux-google-ads
 version: 1.0.0
-description: "Google Ads Transparency Center 查询。提供广告主搜索、广告素材列表、广告详情能力，适用于广告样本检索、竞品创意分析、素材下钻等场景。"
+description: "Google Ads Transparency Center data. Search advertisers, list ad creatives, and inspect ad details for competitive creative research."
 metadata:
   source: google_ads
   requires:
@@ -11,127 +11,140 @@ metadata:
 
 # Google Ads
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md)，其中包含响应结构、错误处理等共享规则。**
+Search Google Ads Transparency Center data across advertisers, domains, creatives, and creative details.
 
-Google Ads Transparency Center 数据查询，覆盖广告主发现、广告素材列表和广告详情。
+**Before using:** Read [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure, error handling, pagination metadata, and CLI conventions.
 
-## 快速决策
+## What you can do
 
-- 想先找广告主 / 域名 → `search_advertisers`
-- 已有广告主 ID 或域名，想列出广告素材 → `list_ad_creatives`
-- 已有 `advertiser_id + creative_id`，想看单条创意详情 → `get_ad_details`
+- **Find advertisers or domains** → `search_advertisers`
+- **List creatives for an advertiser or domain** → `list_ad_creatives`
+- **Inspect one creative** → `get_ad_details`
 
-## Capabilities 概览
+## Available capabilities
 
-| Capability | 说明 | 典型场景 |
-|------------|------|----------|
-| `search_advertisers` | 搜索广告主与域名 | 广告主发现、品牌确认 |
-| `list_ad_creatives` | 列出广告素材 | 创意样本采集、过滤 |
-| `get_ad_details` | 获取广告详情 | 定向与变体下钻 |
+| Capability | What it does | When to use |
+|------------|--------------|-------------|
+| `search_advertisers` | Search advertisers and domains | Discover advertiser IDs and confirm brands |
+| `list_ad_creatives` | List ad creatives | Collect creative samples and filter by region/platform/format |
+| `get_ad_details` | Get creative details | Inspect one ad's information and variations |
 
 ---
 
 ## google_ads.search_advertisers
 
-搜索 Google Ads 广告主与相关域名。
+Search Google Ads advertisers and related domains.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `query` | string | 是 | 搜索关键词 |
-| `region` | string | 否 | ISO alpha-2 国家码；不传则不限地区 |
-| `num_advertisers` | integer | 否 | 广告主数量，1-100；默认 10 |
-| `num_domains` | integer | 否 | 域名数量，1-100；默认 10 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | Search keyword |
+| `region` | string | No | ISO alpha-2 country code; omit for no region filter |
+| `num_advertisers` | integer | No | Number of advertisers to return, `1..100`; default `10` |
+| `num_domains` | integer | No | Number of domains to return, `1..100`; default `10` |
 
-### 返回字段
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `advertisers` | object[] | 广告主列表 |
-| `domains` | object[] | 域名列表 |
-
-### 规则
-
-- `query` 必填
-- `region` 必须是 ISO alpha-2
-- `num_advertisers` / `num_domains` 范围 1-100
-
-### CLI 用法
+### CLI usage
 
 ```bash
 apimux google_ads search_advertisers --query "Nike"
 apimux google_ads search_advertisers --query "Nike" --region "US" --num-advertisers 20
 ```
 
+### Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `advertisers` | object[] | Matching advertisers |
+| `domains` | object[] | Matching domains |
+
+### Notes
+
+- `query` is required.
+- `region` must be an ISO alpha-2 country code when provided.
+- `num_advertisers` and `num_domains` must be in `1..100`.
+
 ---
 
 ## google_ads.list_ad_creatives
 
-按广告主或域名列出广告素材。
+List ad creatives by advertiser ID or domain.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `advertiser_id` | string | 否 | 广告主 ID，必须以 `AR` 开头 |
-| `domain` | string | 否 | 广告主域名 |
-| `region` | string | 否 | ISO alpha-2 国家码；不传则不限地区 |
-| `platform` | string | 否 | `google_play`、`google_maps`、`google_search`、`youtube`、`google_shopping`；不传则不限平台 |
-| `ad_format` | string | 否 | `text`、`image`、`video`；不传则不限格式 |
-| `time_period` | string | 否 | `last_7_days`、`last_30_days`、`last_90_days`、`last_year`；不传则不限时间 |
-| `page_token` | string | 否 | 分页 token，首页不传 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `advertiser_id` | string | No | Advertiser ID; must start with `AR` |
+| `domain` | string | No | Advertiser domain |
+| `region` | string | No | ISO alpha-2 country code; omit for no region filter |
+| `platform` | string | No | `google_play`, `google_maps`, `google_search`, `youtube`, or `google_shopping`; omit for no platform filter |
+| `ad_format` | string | No | `text`, `image`, or `video`; omit for no format filter |
+| `time_period` | string | No | `last_7_days`, `last_30_days`, `last_90_days`, or `last_year`; omit for no time filter |
+| `page_token` | string | No | Pagination token; omit for the first page |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `creative_id` | string | 素材 ID |
-| `advertiser_id` | string | 广告主 ID |
-| `advertiser_name` | string | 广告主名称 |
-| `target_domain` | string | 落地页域名 |
-| `format` | string | 素材格式 |
-| `first_shown_datetime` | string | 首次展示时间 |
-| `last_shown_datetime` | string | 最后展示时间 |
-| `total_days_shown` | integer | 素材累计展示天数 |
-| `details_link` | string | Google 详情页链接 |
+```bash
+apimux google_ads list_ad_creatives --advertiser-id "AR123456789"
+apimux google_ads list_ad_creatives --domain "nike.com" --region "US" --ad-format "video"
+```
 
-### 规则
+### Response fields
 
-- `advertiser_id` 或 `domain` 至少提供一个
-- `advertiser_id` 必须以 `AR` 开头
-- `platform` / `ad_format` / `time_period` 只接受批准的字符串枚举
-- 分页状态放在 `meta.page_token`
+| Field | Type | Description |
+|-------|------|-------------|
+| `creative_id` | string | Creative ID |
+| `advertiser_id` | string | Advertiser ID |
+| `advertiser_name` | string | Advertiser name |
+| `target_domain` | string | Landing page domain |
+| `format` | string | Creative format |
+| `first_shown_datetime` | string | First shown time |
+| `last_shown_datetime` | string | Last shown time |
+| `total_days_shown` | integer | Total days shown |
+| `details_link` | string | Google details page URL |
+
+### Notes
+
+- Provide at least one of `advertiser_id` or `domain`.
+- `advertiser_id` must start with `AR`.
+- `platform`, `ad_format`, and `time_period` accept only the enum values listed above.
+- Next-page state is returned in `meta.page_token` when available.
 
 ---
 
 ## google_ads.get_ad_details
 
-获取单条 Google Ads 广告详情。
+Get details for one Google Ads creative.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `advertiser_id` | string | 是 | 广告主 ID，必须以 `AR` 开头 |
-| `creative_id` | string | 是 | 素材 ID，必须以 `CR` 开头 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `advertiser_id` | string | Yes | Advertiser ID; must start with `AR` |
+| `creative_id` | string | Yes | Creative ID; must start with `CR` |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `ad_information` | object | 广告元信息与定向信息 |
-| `variations` | object[] | 广告创意变体 |
+```bash
+apimux google_ads get_ad_details --advertiser-id "AR123456789" --creative-id "CR987654321"
+```
 
-### 规则
+### Response fields
 
-- `advertiser_id` 必须以 `AR` 开头
-- `creative_id` 必须以 `CR` 开头
-- 素材不存在时返回 `ad_not_found` 错误
+| Field | Type | Description |
+|-------|------|-------------|
+| `ad_information` | object | Ad metadata and targeting information |
+| `variations` | object[] | Creative variations |
+
+### Notes
+
+- `advertiser_id` must start with `AR`.
+- `creative_id` must start with `CR`.
+- Missing creatives return `ad_not_found`.
 
 ---
 
-## 通用规则
+## General notes
 
-- **响应结构与错误处理**：详见 [apimux-shared](../apimux-shared/SKILL.md)
-- **分页**：`list_ad_creatives` 的下一页 token 在 `meta.page_token`
+- See [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure and error handling.
+- `list_ad_creatives` pagination uses `meta.page_token`.
