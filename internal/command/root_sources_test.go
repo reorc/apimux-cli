@@ -605,7 +605,7 @@ func TestMetaAdsGetAdDetailCallsService(t *testing.T) {
 		if r.URL.Path != "/v1/capabilities/meta_ads.get_ad_detail" {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		_, _ = w.Write([]byte(`{"ok":true,"data":{"ad_id":"477570185419072"},"meta":{"capability":"meta_ads.get_ad_detail"}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"ad_id":"477570185419072","page_name":"Coffee Brand","start_date":"2026-01-01T00:00:00Z","publisher_platform":["facebook"],"snapshot":{"body":"hello"}},"meta":{"capability":"meta_ads.get_ad_detail"}}`))
 	}))
 	defer server.Close()
 
@@ -625,6 +625,9 @@ func TestMetaAdsGetAdDetailCallsService(t *testing.T) {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
 	assertDataOnlyOutputContains(t, stdout.String(), `"ad_id":"477570185419072"`)
+	assertDataOnlyOutputContains(t, stdout.String(), `"page_name":"Coffee Brand"`)
+	assertDataOnlyOutputContains(t, stdout.String(), `"publisher_platform":["facebook"]`)
+	assertDataOnlyOutputContains(t, stdout.String(), `"snapshot":{"body":"hello"}`)
 }
 
 func TestDouyinSearchVideosCallsService(t *testing.T) {

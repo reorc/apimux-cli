@@ -1,0 +1,56 @@
+{
+  "input": {
+    "ok": true,
+    "data": {
+      "ad_id": "a1",
+      "page_id": "p1",
+      "page_name": "Coffee Brand",
+      "start_date": "2026-01-01T00:00:00Z",
+      "end_date": "2026-01-31T00:00:00Z",
+      "is_active": true,
+      "categories": [
+        "UNKNOWN"
+      ],
+      "gated_type": "ELIGIBLE",
+      "hide_data_status": "NONE",
+      "publisher_platform": [
+        "facebook",
+        "instagram"
+      ],
+      "impressions_index": -1,
+      "snapshot": {
+        "body": "hello",
+        "title": "world"
+      },
+      "collation_count": 2,
+      "collation_id": "c1"
+    },
+    "meta": {
+      "capability": "meta_ads.get_ad_detail"
+    }
+  },
+  "want": {
+    "ad_id": "a1",
+    "page_id": "p1",
+    "page_name": "Coffee Brand",
+    "start_date": "2026-01-01T00:00:00Z",
+    "end_date": "2026-01-31T00:00:00Z",
+    "is_active": true,
+    "categories": [
+      "UNKNOWN"
+    ],
+    "gated_type": "ELIGIBLE",
+    "hide_data_status": "NONE",
+    "publisher_platform": [
+      "facebook",
+      "instagram"
+    ],
+    "impressions_index": -1,
+    "snapshot": {
+      "body": "hello",
+      "title": "world"
+    },
+    "collation_count": 2,
+    "collation_id": "c1"
+  }
+}
