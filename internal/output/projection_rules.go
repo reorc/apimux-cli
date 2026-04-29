@@ -497,14 +497,7 @@ var projectionRules = map[string]projectionRule{
 	},
 	"meta_ads.get_ad_detail": {
 		Compact: projectionSpec{
-			Scalars: []fieldRule{
-				{From: "ad_id", To: "ad_id"},
-				{From: "eu_transparency.age_audience.min", To: "age_audience.min"},
-				{From: "eu_transparency.age_audience.max", To: "age_audience.max"},
-				{From: "eu_transparency.gender_audience", To: "gender_audience"},
-				{From: "eu_transparency.location_audience", To: "location_count", Transform: transformCount},
-				{From: "verified_voice", To: "verified_voice"},
-			},
+			PassThrough: true,
 		},
 	},
 	"meta_ads.search_ads": {

@@ -79,6 +79,29 @@ func writeServiceResponse(runCtx *runContext, resp client.Response, err error) e
 	if runCtx.verbose {
 		renderer.Diagnostic("[apimux] HTTP %d", resp.StatusCode)
 	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		if isServiceErrorEnvelope(resp.Body) {
+			if err := renderer.WriteCapabilityResponse(resp.Body, runCtx.output, runCtx.debug); err != nil {
+				return err
+			}
+		} else if err := renderer.WriteHTTPError(resp.StatusCode, resp.Body); err != nil {
+			return err
+		}
+		runCtx.exitCode = exitCodeForHTTPStatus(resp.StatusCode)
+		return nil
+	}
+	if !json.Valid(resp.Body) {
+		message := fmt.Sprintf("service returned non-JSON response with HTTP %d", resp.StatusCode)
+		body := strings.TrimSpace(string(resp.Body))
+		if body != "" {
+			message = fmt.Sprintf("%s: %s", message, body)
+		}
+		if err := renderer.WriteLocalError(message, "cli_non_json_response"); err != nil {
+			return err
+		}
+		runCtx.exitCode = exitCodeForHTTPStatus(resp.StatusCode)
+		return nil
+	}
 	if err := renderer.WriteCapabilityResponse(resp.Body, runCtx.output, runCtx.debug); err != nil {
 		var invalid *output.InvalidProjectionError
 		if errors.As(err, &invalid) {
@@ -92,6 +115,16 @@ func writeServiceResponse(runCtx *runContext, resp client.Response, err error) e
 	}
 	runCtx.exitCode = exitCodeForHTTPStatus(resp.StatusCode)
 	return nil
+}
+
+func isServiceErrorEnvelope(body []byte) bool {
+	var env struct {
+		Error json.RawMessage `json:"error"`
+	}
+	if err := json.Unmarshal(body, &env); err != nil {
+		return false
+	}
+	return len(env.Error) > 0 && string(env.Error) != "null"
 }
 
 func parseObjectFlag(value, flagName string) (map[string]any, error) {
