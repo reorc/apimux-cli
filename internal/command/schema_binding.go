@@ -39,9 +39,13 @@ func newSchemaBoundCapabilityCommand(runCtx *runContext, capability, use, short,
 		Short:              short,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			args = stripPersistentArgs(args)
 			spec, err := fetchCapabilitySchema(cmd.Context(), runCtx, capability)
 			if err != nil {
 				return err
+			}
+			if wantsSchemaBoundHelp(args) {
+				return writeSchemaBoundHelp(cmd, spec)
 			}
 			if len(spec.Parameters) == 0 {
 				return &cliError{
@@ -50,13 +54,35 @@ func newSchemaBoundCapabilityCommand(runCtx *runContext, capability, use, short,
 					message:  fmt.Sprintf("%s does not have configurable parameters", capability),
 				}
 			}
-			params, err := parseSchemaBoundParams(stripPersistentArgs(args), spec, commandPath)
+			params, err := parseSchemaBoundParams(args, spec, commandPath)
 			if err != nil {
 				return err
 			}
 			return callCapability(cmd.Context(), runCtx, capability, params)
 		},
 	}
+}
+
+func wantsSchemaBoundHelp(args []string) bool {
+	for _, arg := range args {
+		switch strings.TrimSpace(arg) {
+		case "--help", "-h":
+			return true
+		}
+	}
+	return false
+}
+
+func writeSchemaBoundHelp(cmd *cobra.Command, spec schema.CapabilitySchema) error {
+	if description := strings.TrimSpace(spec.Description); description != "" {
+		cmd.Long = description
+	}
+	for _, param := range spec.Parameters {
+		if _, err := registerSchemaFlag(cmd.Flags(), spec.Name, param); err != nil {
+			return err
+		}
+	}
+	return cmd.Help()
 }
 
 func fetchCapabilitySchema(ctx context.Context, runCtx *runContext, capability string) (schema.CapabilitySchema, error) {

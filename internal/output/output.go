@@ -140,3 +140,29 @@ func (r Renderer) WriteLocalError(message string, code string) error {
 	}
 	return r.writeJSON(body, false)
 }
+
+func (r Renderer) WriteHTTPError(statusCode int, body []byte) error {
+	trimmed := bytes.TrimSpace(body)
+	message := fmt.Sprintf("service returned HTTP %d", statusCode)
+	errorPayload := map[string]any{
+		"type":        "http",
+		"code":        "cli_http_error",
+		"message":     message,
+		"status_code": statusCode,
+	}
+	if len(trimmed) > 0 {
+		if json.Valid(trimmed) {
+			errorPayload["body"] = json.RawMessage(trimmed)
+		} else {
+			bodyText := string(trimmed)
+			errorPayload["body"] = bodyText
+			errorPayload["message"] = fmt.Sprintf("%s: %s", message, bodyText)
+		}
+	}
+
+	payload, err := json.Marshal(map[string]any{"error": errorPayload})
+	if err != nil {
+		return err
+	}
+	return r.writeJSON(payload, false)
+}

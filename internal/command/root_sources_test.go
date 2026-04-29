@@ -605,7 +605,7 @@ func TestMetaAdsGetAdDetailCallsService(t *testing.T) {
 		if r.URL.Path != "/v1/capabilities/meta_ads.get_ad_detail" {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		_, _ = w.Write([]byte(`{"ok":true,"data":{"ad_id":"477570185419072","page_name":"Coffee Brand","start_date":"2026-01-01T00:00:00Z","publisher_platform":["facebook"],"snapshot":{"body":"hello"}},"meta":{"capability":"meta_ads.get_ad_detail"}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"ad_id":"477570185419072","page_name":"Audi USA","snapshot":{"body":"Saying yes is simple","videos":[{"video_url":"https://example.com/video.mp4"}]}},"meta":{"capability":"meta_ads.get_ad_detail"}}`))
 	}))
 	defer server.Close()
 
@@ -625,9 +625,8 @@ func TestMetaAdsGetAdDetailCallsService(t *testing.T) {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
 	assertDataOnlyOutputContains(t, stdout.String(), `"ad_id":"477570185419072"`)
-	assertDataOnlyOutputContains(t, stdout.String(), `"page_name":"Coffee Brand"`)
-	assertDataOnlyOutputContains(t, stdout.String(), `"publisher_platform":["facebook"]`)
-	assertDataOnlyOutputContains(t, stdout.String(), `"snapshot":{"body":"hello"}`)
+	assertDataOnlyOutputContains(t, stdout.String(), `"page_name":"Audi USA"`)
+	assertDataOnlyOutputContains(t, stdout.String(), `"snapshot":{"body":"Saying yes is simple"`)
 }
 
 func TestDouyinSearchVideosCallsService(t *testing.T) {
@@ -887,6 +886,39 @@ func TestRedditSearchCallsService(t *testing.T) {
 	}
 }
 
+func TestRedditSearchHelpPrintsSchemaFlags(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if maybeServeSchema(w, r) {
+			return
+		}
+		t.Fatalf("unexpected request path: %s", r.URL.Path)
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"reddit", "search",
+		"--help",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s, stdout=%s", exitCode, stderr.String(), stdout.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Search Reddit posts") || !strings.Contains(output, "--query string") || !strings.Contains(output, "--search-type string") {
+		t.Fatalf("expected reddit search help with schema flags, got %s", output)
+	}
+	if strings.Contains(output, "cli_invalid_flags") || strings.Contains(output, "help requested") {
+		t.Fatalf("expected help output, got %s", output)
+	}
+}
+
 func TestRedditGetPostDetailCallsService(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if maybeServeSchema(w, r) {
@@ -947,6 +979,39 @@ func TestXiaohongshuSearchNotesCallsService(t *testing.T) {
 	}
 	if got := stdout.String(); !strings.Contains(got, `"columns":["note_id","xsec_token","title","description","type","like_count","collect_count","comment_count","author_id","author"]`) || !strings.Contains(got, `"rows":[]`) {
 		t.Fatalf("expected compact table output, got %s", got)
+	}
+}
+
+func TestXiaohongshuSearchNotesHelpPrintsSchemaFlags(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if maybeServeSchema(w, r) {
+			return
+		}
+		t.Fatalf("unexpected request path: %s", r.URL.Path)
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"xiaohongshu", "search_notes",
+		"-h",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s, stdout=%s", exitCode, stderr.String(), stdout.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Search Xiaohongshu notes") || !strings.Contains(output, "--keyword string") || !strings.Contains(output, "--note-type string") {
+		t.Fatalf("expected xiaohongshu search_notes help with schema flags, got %s", output)
+	}
+	if strings.Contains(output, "cli_invalid_flags") || strings.Contains(output, "help requested") {
+		t.Fatalf("expected help output, got %s", output)
 	}
 }
 

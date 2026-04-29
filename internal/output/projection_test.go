@@ -359,6 +359,41 @@ func TestProjectCapabilityCompactMetaAdsKeepsSnapshotAndPlatforms(t *testing.T) 
 	}
 }
 
+func TestProjectCapabilityCompactMetaAdsGetAdDetailPassThrough(t *testing.T) {
+	payload := json.RawMessage(`{
+		"ad_id":"1192852116078368",
+		"page_name":"Audi USA",
+		"publisher_platform":["facebook","instagram"],
+		"snapshot":{
+			"body":"Saying yes is simple",
+			"cta_text":"Learn more",
+			"videos":[{"video_url":"https://example.com/video.mp4"}]
+		},
+		"start_date":"2026-03-24T07:00:00Z",
+		"end_date":"2026-04-27T07:00:00Z"
+	}`)
+
+	body, err := projectCapability("meta_ads.get_ad_detail", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	if got["page_name"] != "Audi USA" {
+		t.Fatalf("expected page_name in pass-through output, got %#v", got)
+	}
+	snapshot, _ := got["snapshot"].(map[string]any)
+	if snapshot["body"] != "Saying yes is simple" || snapshot["videos"] == nil {
+		t.Fatalf("expected full snapshot in pass-through output, got %#v", got)
+	}
+	if _, exists := got["age_audience"]; exists {
+		t.Fatalf("did not expect compact-only age_audience field in pass-through output, got %#v", got)
+	}
+}
+
 func TestProjectCapabilityCompactGoogleAdsCreativesKeepsKamayColumns(t *testing.T) {
 	payload := json.RawMessage(`[
 		{
