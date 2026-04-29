@@ -1,7 +1,7 @@
 ---
 name: apimux-meta-ads
 version: 1.0.0
-description: "Meta Ads Library 查询。提供广告搜索与广告详情能力，适用于广告创意研究、竞品分析、投放样本采集等场景。"
+description: "Meta Ads Library data. Search ads and inspect ad details for creative research, competitive analysis, and campaign sampling."
 metadata:
   source: meta_ads
   requires:
@@ -11,44 +11,44 @@ metadata:
 
 # Meta Ads
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md)，其中包含响应结构、错误处理等共享规则。**
+Search and analyze ads from Meta Ads Library (Facebook, Instagram). Use this for competitive research, ad creative inspiration, and campaign analysis.
 
-Meta Ads Library 数据查询，覆盖广告搜索与广告详情两个核心能力。
+**Before using:** Read [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure, error handling, pagination metadata, and CLI conventions.
 
-## 快速决策
+## What you can do
 
-- 想按关键词找广告创意样本 → `search_ads`
-- 想下钻单条广告详情 → `get_ad_detail`
-- 想做广告样本分析 → 先 `search_ads`，再对目标 `ad_id` 调 `get_ad_detail`
+- **Search ads by keyword** → `search_ads` — find ads matching your search terms
+- **Get detailed ad info** → `get_ad_detail` — view full details for a specific ad
+- **Analyze ad campaigns** → search first, then get details for interesting ads
 
-## Capabilities 概览
+## Available capabilities
 
-| Capability | 说明 | 典型场景 |
-|------------|------|----------|
-| `search_ads` | 搜索 Meta Ads Library 广告 | 广告创意研究、竞品广告发现 |
-| `get_ad_detail` | 获取单条广告详情 | EU 透明度信息、政治广告详情下钻 |
+| Capability | What it does | When to use |
+|------------|--------------|-------------|
+| `search_ads` | Search Meta Ads Library | Find ads by keyword, filter by country/platform/date |
+| `get_ad_detail` | Get full details for an ad | View complete info after finding an ad via search |
 
 ---
 
 ## meta_ads.search_ads
 
-按关键词搜索 Meta Ads Library 广告。
+Search for ads in Meta Ads Library by keyword. Returns a list of ads with creative snapshots.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `q` | string | 是 | 搜索关键词 |
-| `country` | string | 否 | ISO alpha-2 国家码；不传则不限地区 |
-| `ad_type` | string | 否 | `all`、`political_and_issue_ads`、`housing_ads`、`employment_ads`、`credit_ads`；默认 `all` |
-| `active_status` | string | 否 | `active`、`inactive`、`all`；默认 `all` |
-| `media_type` | string | 否 | `all`、`video`、`image`、`meme`、`image_and_meme`、`none`；默认 `all` |
-| `platforms` | string | 否 | 逗号分隔平台名：`facebook,instagram` 等；不传则不限平台 |
-| `start_date` | string | 否 | 开始日期，`YYYY-MM-DD`；不传则不限起始时间 |
-| `end_date` | string | 否 | 结束日期，`YYYY-MM-DD`；不传则不限截止时间 |
-| `next_page_token` | string | 否 | 分页 token，首页不传 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `q` | string | Yes | Search keyword |
+| `country` | string | No | ISO alpha-2 country code (e.g., "US", "GB") |
+| `ad_type` | string | No | Filter by ad type: `all`, `political_and_issue_ads`, `housing_ads`, `employment_ads`, `credit_ads` (default: `all`) |
+| `active_status` | string | No | Filter by status: `active`, `inactive`, `all` (default: `all`) |
+| `media_type` | string | No | Filter by media: `all`, `video`, `image`, `meme`, `image_and_meme`, `none` (default: `all`) |
+| `platforms` | string | No | Comma-separated platforms: `facebook,instagram` |
+| `start_date` | string | No | Start date in `YYYY-MM-DD` format |
+| `end_date` | string | No | End date in `YYYY-MM-DD` format |
+| `next_page_token` | string | No | Pagination token (omit for first page) |
 
-### CLI 用法
+### CLI usage
 
 ```bash
 apimux meta_ads search_ads --q "fitness app"
@@ -56,65 +56,100 @@ apimux meta_ads search_ads --q "fitness app" --country "US" --media-type "video"
 apimux meta_ads search_ads --q "fitness app" --platforms "facebook,instagram" --start-date "2026-01-01"
 ```
 
-### 返回字段
+### Response fields
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `ad_id` | string | 广告 ID |
+| Field | Type | Description |
+|-------|------|-------------|
+| `ad_id` | string | Ad ID |
 | `page_id` | string | Page ID |
-| `page_name` | string | Page 名称 |
-| `start_date` | string | 广告开始时间 |
-| `end_date` | string | 广告结束时间 |
-| `is_active` | boolean | 是否活跃 |
-| `categories` | string[] | 广告类别 |
-| `publisher_platforms` | string[] | 广告投放平台 |
-| `snapshot` | object | 创意摘要，包括正文、标题、链接、卡片、视频等 |
+| `page_name` | string | Page name |
+| `start_date` | string | Ad start date |
+| `end_date` | string | Ad end date |
+| `is_active` | boolean | Whether ad is currently active |
+| `categories` | string[] | Ad categories |
+| `publisher_platform` | string[] | Platforms where ad appears |
+| `snapshot` | object | Creative snapshot with text, title, links, cards, videos |
 
-### 规则
+### Notes
 
-- `q` 必填
-- `country` 必须是 ISO alpha-2
-- `ad_type` / `active_status` / `media_type` 只接受批准的字符串枚举
-- `platforms` 必须是逗号分隔的小写平台名
-- `start_date` / `end_date` 必须是 `YYYY-MM-DD`
-- 分页状态放在 `meta.next_page_token`
+- `q` is required.
+- `country` must be an ISO alpha-2 country code when provided.
+- `ad_type`, `active_status`, and `media_type` accept only the enum values listed above.
+- `platforms` must be a comma-separated list of lowercase platform names.
+- `start_date` and `end_date` must be `YYYY-MM-DD`.
+- Use `meta.next_page_token` as `next_page_token` to fetch the next page.
 
 ---
 
 ## meta_ads.get_ad_detail
 
-获取单条 Meta 广告详情。
+Get full details for a specific ad. Use this after `search_ads` to view complete information for ads from your search results.
 
-### 参数
+**Important:** Run `search_ads` first. This capability returns the full ad record for an `ad_id` that appeared in your APIMux search results.
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `ad_id` | string | 是 | 广告 archive ID |
+### Parameters
 
-### CLI 用法
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `ad_id` | string | Yes | Ad archive ID from search results |
+
+### CLI usage
 
 ```bash
+apimux meta_ads search_ads --q "fitness app"
 apimux meta_ads get_ad_detail --ad-id "477570185419072"
 ```
 
-### 返回字段
+### Response fields
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `ad_id` | string | 广告 ID |
-| `eu_transparency` | object | EU 透明度信息 |
-| `political_insights` | object | 政治广告洞察信息 |
-| `verified_voice` | object | verified voice 信息 |
+| Field | Type | Description |
+|-------|------|-------------|
+| `ad_id` | string | Ad ID |
+| `page_id` | string | Page ID |
+| `page_name` | string | Page name |
+| `start_date` | string | Ad start date |
+| `end_date` | string | Ad end date |
+| `is_active` | boolean | Whether ad is currently active |
+| `categories` | string[] | Ad categories |
+| `entity_type` | string | Entity type |
+| `gated_type` | string | Gated status |
+| `hide_data_status` | string | Data visibility status |
+| `publisher_platform` | string[] | Platforms where ad appears |
+| `impressions_index` | number | Impressions index |
+| `total_active_time` | number | Total active time |
+| `snapshot` | object | Creative snapshot with text, title, links, cards, videos |
+| `collation_count` | number | Collation count |
+| `collation_id` | string | Collation ID |
 
-### 规则
+### Notes
 
-- `ad_id` 必填
-- 广告不存在时返回 `ad_not_found` 错误
-- contract 不要求必须先调用 `search_ads`
+- `ad_id` is required.
+- Run `search_ads` first, then use an `ad_id` from the search results.
+- If the ad cannot be found, the response returns `ad_not_found`; run `meta_ads.search_ads` again and use an `ad_id` from the search results.
+- This response does not include legacy provider-detail-only fields such as `eu_transparency`, `political_insights`, or `verified_voice`.
 
 ---
 
-## 通用规则
+## Common patterns
 
-- **响应结构与错误处理**：详见 [apimux-shared](../apimux-shared/SKILL.md)
-- **分页**：`search_ads` 的下一页 token 在 `meta.next_page_token`
+**Find and analyze ads:**
+```bash
+# 1. Search for ads
+apimux meta_ads search_ads --q "fitness app" --country "US"
+
+# 2. Get details for specific ad from results
+apimux meta_ads get_ad_detail --ad-id "477570185419072"
+```
+
+**Filter by platform and date:**
+```bash
+apimux meta_ads search_ads --q "fitness app" \
+  --platforms "facebook,instagram" \
+  --start-date "2026-01-01" \
+  --media-type "video"
+```
+
+## General notes
+
+- See [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure and error handling.
+- `search_ads` pagination uses `meta.next_page_token`.

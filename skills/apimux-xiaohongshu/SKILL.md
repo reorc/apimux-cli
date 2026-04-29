@@ -1,7 +1,7 @@
 ---
 name: apimux-xiaohongshu
 version: 1.0.0
-description: "小红书内容查询。提供笔记搜索、笔记详情和评论能力，适用于种草内容研究、笔记巡检、评论抽样等场景。"
+description: "Xiaohongshu content data. Search notes, inspect note details, and collect comments for content research and audience feedback analysis."
 metadata:
   source: xiaohongshu
   requires:
@@ -11,137 +11,158 @@ metadata:
 
 # Xiaohongshu
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md)，其中包含响应结构、错误处理等共享规则。**
+Search Xiaohongshu notes, inspect note details, and collect comments. Use this for content research, seed-content discovery, note monitoring, and comment sampling.
 
-Xiaohongshu 数据查询，覆盖笔记搜索、详情和评论三个首批能力。
+**Before using:** Read [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure, error handling, pagination metadata, and CLI conventions.
 
-## 快速决策
+## What you can do
 
-- 想先找笔记样本 → `search_notes`
-- 已有 `note_id`，想拉笔记详情 → `get_note_detail`
-- 已有 `note_id`，想看评论 → `get_note_comments`
+- **Find note examples** → `search_notes`
+- **Inspect one note** → `get_note_detail`
+- **Collect note comments** → `get_note_comments`
 
-## Capabilities 概览
+## Available capabilities
 
-| Capability | 说明 | 典型场景 |
-|------------|------|----------|
-| `search_notes` | 搜索笔记 | 种草内容发现、关键词巡检 |
-| `get_note_detail` | 获取单篇笔记详情 | 笔记内容与作者信息下钻 |
-| `get_note_comments` | 获取笔记评论 | 评论抽样、互动分析 |
+| Capability | What it does | When to use |
+|------------|--------------|-------------|
+| `search_notes` | Search Xiaohongshu notes | Discover content examples and monitor keywords |
+| `get_note_detail` | Get one note's details | Inspect content, author, engagement, images, and tags |
+| `get_note_comments` | Get note comments | Sample audience feedback |
 
 ---
 
 ## xiaohongshu.search_notes
 
-搜索 Xiaohongshu 笔记。
+Search Xiaohongshu notes by keyword.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `keyword` | string | 是 | 搜索关键词 |
-| `page` | integer | 否 | 页码，从 1 开始；默认 1 |
-| `note_type` | string | 否 | `all`、`video`、`normal`、`live`；默认 `all` |
-| `time_filter` | string | 否 | `all`、`1d`、`1w`、`6m`；默认 `all` |
-| `sort_strategy` | string | 否 | `default`、`latest`、`likes`；默认 `default` |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `keyword` | string | Yes | Search keyword |
+| `page` | integer | No | Page number, starting at 1; default `1` |
+| `note_type` | string | No | `all`, `video`, `normal`, or `live`; default `all` |
+| `time_filter` | string | No | `all`, `1d`, `1w`, or `6m`; default `all` |
+| `sort_strategy` | string | No | `default`, `latest`, or `likes`; default `default` |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `note_id` | string | 笔记 ID |
-| `title` | string | 标题 |
-| `description` | string | 描述 |
-| `type` | string | 笔记类型 |
-| `xsec_token` | string | 从搜索结果带回的安全 token，后续 `get_note_detail` 可能需要 |
-| `like_count` | integer | 点赞数 *(搜索结果中可能为 null，完整数据请调用 `get_note_detail`)* |
-| `collect_count` | integer | 收藏数 *(搜索结果中可能为 null，完整数据请调用 `get_note_detail`)* |
-| `comment_count` | integer | 评论数 *(搜索结果中可能为 null，完整数据请调用 `get_note_detail`)* |
-| `author` | object | 作者信息 |
+```bash
+apimux xiaohongshu search_notes --keyword "desk setup"
+apimux xiaohongshu search_notes --keyword "desk setup" --sort-strategy "likes" --note-type "video"
+```
 
-### 规则
+### Response fields
 
-- `keyword` 必填
-- 推荐使用标准枚举值；CLI 也兼容旧版数值参数：`sort_strategy` 的 `general/time_descending/popularity_descending`，以及 `note_type` 的 `0/1/2`
-- 分页走 `page` 参数；返回状态在 `meta.current_page` / `meta.next_page` / `meta.has_more`
+| Field | Type | Description |
+|-------|------|-------------|
+| `note_id` | string | Note ID |
+| `title` | string | Note title |
+| `description` | string | Note description |
+| `type` | string | Note type |
+| `xsec_token` | string | Security token from search results; may be needed by `get_note_detail` |
+| `like_count` | integer | Like count; may be `null` in search results |
+| `collect_count` | integer | Collection count; may be `null` in search results |
+| `comment_count` | integer | Comment count; may be `null` in search results |
+| `author` | object | Author information |
+
+### Notes
+
+- `keyword` is required.
+- Prefer the string enum values above. For backward compatibility, the CLI also accepts legacy values for `sort_strategy` (`general/time_descending/popularity_descending`) and `note_type` (`0/1/2`).
+- Pagination uses the `page` parameter. Page state is returned in `meta.current_page`, `meta.next_page`, and `meta.has_more`.
 
 ---
 
 ## xiaohongshu.get_note_detail
 
-获取单篇 Xiaohongshu 笔记详情。
+Get details for one Xiaohongshu note.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `note_id` | string | 是 | 24-char hex 笔记 ID |
-| `xsec_token` | string | 否 | 从 `search_notes` 结果拿到的安全 token；部分笔记详情需要 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `note_id` | string | Yes | 24-character hex note ID |
+| `xsec_token` | string | No | Security token from `search_notes`; required for some notes |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `note_id` | string | 笔记 ID |
-| `title` | string | 标题 |
-| `description` | string | 描述 |
-| `type` | string | 笔记类型 |
-| `user_id` | string | 作者 ID |
-| `nickname` | string | 作者昵称 |
-| `avatar` | string | 作者头像 |
-| `like_count` | integer | 点赞数 |
-| `collect_count` | integer | 收藏数 |
-| `comment_count` | integer | 评论数 |
-| `share_count` | integer | 分享数 |
-| `images` | string[] | 图片列表 |
-| `tags` | string[] | 标签列表 |
-| `time` | string | 发布时间 |
-| `last_update_time` | string | 更新时间 |
-| `ip_location` | string | IP 属地 |
-| `video_url` | string | 视频链接（视频笔记时） |
+```bash
+apimux xiaohongshu get_note_detail --note-id "64f1a2b3c4d5e6f789abcdef"
+apimux xiaohongshu get_note_detail --note-id "64f1a2b3c4d5e6f789abcdef" --xsec-token "..."
+```
 
-### 规则
+### Response fields
 
-- `note_id` 必须是 24-char hex
-- 如果 `search_notes` 返回了 `xsec_token`，调用详情时应一并传入
-- share link 在 contract 层拒绝，不接受 `xhslink.com/...`
-- 笔记不存在时返回 `note_not_found` 错误
+| Field | Type | Description |
+|-------|------|-------------|
+| `note_id` | string | Note ID |
+| `title` | string | Note title |
+| `description` | string | Note description |
+| `type` | string | Note type |
+| `user_id` | string | Author user ID |
+| `nickname` | string | Author nickname |
+| `avatar` | string | Author avatar URL |
+| `like_count` | integer | Like count |
+| `collect_count` | integer | Collection count |
+| `comment_count` | integer | Comment count |
+| `share_count` | integer | Share count |
+| `images` | string[] | Image URLs |
+| `tags` | string[] | Tags |
+| `time` | string | Publish time |
+| `last_update_time` | string | Last update time |
+| `ip_location` | string | IP location |
+| `video_url` | string | Video URL for video notes |
+
+### Notes
+
+- `note_id` must be a 24-character hex string.
+- If `search_notes` returns `xsec_token`, pass it when calling details.
+- Share links such as `xhslink.com/...` are not accepted; pass the note ID.
+- Missing notes return `note_not_found`.
 
 ---
 
 ## xiaohongshu.get_note_comments
 
-获取 Xiaohongshu 笔记评论。
+Get comments for one Xiaohongshu note.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `note_id` | string | 是 | 24-char hex 笔记 ID |
-| `cursor` | string | 否 | 评论分页 cursor，首页不传 |
-| `sort_strategy` | string | 否 | `default`、`latest`、`likes`；默认 `default` |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `note_id` | string | Yes | 24-character hex note ID |
+| `cursor` | string | No | Comment pagination cursor; omit for the first page |
+| `sort_strategy` | string | No | `default`, `latest`, or `likes`; default `default` |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `comment_id` | string | 评论 ID |
-| `user_id` | string | 作者 ID |
-| `nickname` | string | 作者昵称 |
-| `avatar` | string | 作者头像 |
-| `content` | string | 评论内容 |
-| `like_count` | integer | 点赞数 |
-| `reply_count` | integer | 回复数 |
-| `create_time` | string | 发布时间 |
-| `ip_location` | string | IP 属地 |
+```bash
+apimux xiaohongshu get_note_comments --note-id "64f1a2b3c4d5e6f789abcdef"
+apimux xiaohongshu get_note_comments --note-id "64f1a2b3c4d5e6f789abcdef" --sort-strategy "latest"
+```
 
-### 规则
+### Response fields
 
-- `note_id` 必须是 24-char hex
-- 分页状态放在 `meta.cursor` / `meta.has_more`
+| Field | Type | Description |
+|-------|------|-------------|
+| `comment_id` | string | Comment ID |
+| `user_id` | string | Author user ID |
+| `nickname` | string | Author nickname |
+| `avatar` | string | Author avatar URL |
+| `content` | string | Comment text |
+| `like_count` | integer | Like count |
+| `reply_count` | integer | Reply count |
+| `create_time` | string | Publish time |
+| `ip_location` | string | IP location |
+
+### Notes
+
+- `note_id` must be a 24-character hex string.
+- Pagination state is returned in `meta.cursor` and `meta.has_more`.
 
 ---
 
-## 通用规则
+## General notes
 
-- **响应结构与错误处理**：详见 [apimux-shared](../apimux-shared/SKILL.md)
+- See [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure and error handling.

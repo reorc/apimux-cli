@@ -1,7 +1,7 @@
 ---
 name: apimux-douyin
 version: 1.0.0
-description: "抖音视频搜索与评论查询。提供视频搜索、详情和评论能力，适用于内容研究、热视频巡检、评论抽样等场景。"
+description: "Douyin video and comment data. Search videos, inspect video details, collect comments, and drill into comment replies for content research and audience feedback analysis."
 metadata:
   source: douyin
   requires:
@@ -11,156 +11,183 @@ metadata:
 
 # Douyin
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md)，其中包含响应结构、错误处理等共享规则。**
+Search and inspect Douyin videos, details, comments, and comment replies. Use this for content research, hot-video monitoring, and comment sampling.
 
-Douyin 数据查询，覆盖视频搜索、视频详情、评论列表和评论回复四个能力。
+**Before using:** Read [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure, error handling, pagination metadata, and CLI conventions.
 
-## 快速决策
+## What you can do
 
-- 想先找视频样本 → `search_videos`
-- 已有 `aweme_id`，想看单条视频详情 → `get_video_detail`
-- 已有 `aweme_id`，想拉评论 → `get_video_comments`
-- 已有 `aweme_id` + `comment_id`，想继续下钻评论回复 → `get_comment_replies`
+- **Find video examples** → `search_videos`
+- **Inspect one video** → `get_video_detail`
+- **Collect comments for a video** → `get_video_comments`
+- **Drill into comment replies** → `get_comment_replies`
 
-## Capabilities 概览
+## Available capabilities
 
-| Capability | 说明 | 典型场景 |
-|------------|------|----------|
-| `search_videos` | 搜索 Douyin 视频 | 热门内容发现、关键词巡检 |
-| `get_video_detail` | 获取单条视频详情 | 视频元数据与作者信息下钻 |
-| `get_video_comments` | 获取视频评论列表 | 评论抽样、舆情分析 |
-| `get_comment_replies` | 获取评论回复列表 | 评论线程下钻、回复语义分析 |
+| Capability | What it does | When to use |
+|------------|--------------|-------------|
+| `search_videos` | Search Douyin videos by keyword | Discover videos and monitor topics |
+| `get_video_detail` | Get details for one video | Inspect metadata, author, and engagement |
+| `get_video_comments` | List comments for one video | Sample audience feedback |
+| `get_comment_replies` | List replies under one parent comment | Analyze a comment thread |
 
 ---
 
 ## douyin.search_videos
 
-搜索 Douyin 视频。
+Search Douyin videos by keyword.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `keyword` | string | 是 | 搜索关键词 |
-| `sort_type` | string | 否 | `comprehensive`、`likes`、`latest`；默认 `comprehensive` |
-| `publish_time` | string | 否 | `all`、`1d`、`1w`、`6m`；默认 `all` |
-| `filter_duration` | string | 否 | `all`、`under_1m`、`1m_5m`、`over_5m`；默认 `all` |
-| `content_type` | string | 否 | `all`、`video`、`image`、`article`；默认 `all` |
-| `cursor` | integer | 否 | 分页 cursor，首页不传 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `keyword` | string | Yes | Search keyword |
+| `sort_type` | string | No | `comprehensive`, `likes`, or `latest`; default `comprehensive` |
+| `publish_time` | string | No | `all`, `1d`, `1w`, or `6m`; default `all` |
+| `filter_duration` | string | No | `all`, `under_1m`, `1m_5m`, or `over_5m`; default `all` |
+| `content_type` | string | No | `all`, `video`, `image`, or `article`; default `all` |
+| `cursor` | integer | No | Pagination cursor; omit for the first page |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `aweme_id` | string | 视频 ID |
-| `description` | string | 视频描述 |
-| `create_time` | string | RFC3339 发布时间 |
-| `author` | object | 作者信息 |
-| `statistics` | object | 点赞/评论/分享/播放统计 |
-| `video` | object | 视频时长与比例 |
-| `share_url` | string | 分享链接 |
+```bash
+apimux douyin search_videos --keyword "desk setup"
+apimux douyin search_videos --keyword "desk setup" --sort-type "likes" --publish-time "1w"
+```
 
-### 规则
+### Response fields
 
-- `keyword` 必填
-- 推荐使用标准枚举值；CLI 为兼容历史调用，也接受旧版别名：`sort_type` 的 `0/1/2` 和 `publish_time` 的 `0/1/7/180`
-- 分页状态放在 `meta.cursor` / `meta.has_more`
+| Field | Type | Description |
+|-------|------|-------------|
+| `aweme_id` | string | Video ID |
+| `description` | string | Video description |
+| `create_time` | string | RFC3339 publish time |
+| `author` | object | Author information |
+| `statistics` | object | Like/comment/share/play statistics |
+| `video` | object | Video duration and aspect information |
+| `share_url` | string | Share URL |
+
+### Notes
+
+- `keyword` is required.
+- Prefer the string enum values above. For backward compatibility, the CLI also accepts legacy aliases for `sort_type` (`0/1/2`) and `publish_time` (`0/1/7/180`).
+- Pagination state is returned in `meta.cursor` and `meta.has_more`.
 
 ---
 
 ## douyin.get_video_detail
 
-获取单条 Douyin 视频详情。
+Get details for one Douyin video.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `aweme_id` | string | 是 | 数字字符串形式的视频 ID |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `aweme_id` | string | Yes | Numeric video ID |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `aweme_id` | string | 视频 ID |
-| `description` | string | 视频描述 |
-| `create_time` | string | RFC3339 发布时间 |
-| `author` | object | 作者信息 |
-| `statistics` | object | 点赞/评论/分享/播放统计 |
-| `video` | object | 视频时长与比例 |
-| `share_url` | string | 分享链接 |
+```bash
+apimux douyin get_video_detail --aweme-id "7489123456789012345"
+```
 
-### 规则
+### Response fields
 
-- `aweme_id` 必须是数字字符串
-- 视频不存在时返回 `video_not_found` 错误
+| Field | Type | Description |
+|-------|------|-------------|
+| `aweme_id` | string | Video ID |
+| `description` | string | Video description |
+| `create_time` | string | RFC3339 publish time |
+| `author` | object | Author information |
+| `statistics` | object | Like/comment/share/play statistics |
+| `video` | object | Video duration and aspect information |
+| `share_url` | string | Share URL |
+
+### Notes
+
+- `aweme_id` must be a numeric string.
+- Missing videos return `video_not_found`.
 
 ---
 
 ## douyin.get_video_comments
 
-获取 Douyin 视频评论列表。
+List comments for one Douyin video.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `aweme_id` | string | 是 | 数字字符串形式的视频 ID |
-| `cursor` | integer | 否 | 评论分页 cursor，首页不传 |
-| `count` | integer | 否 | 评论页大小；默认 20 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `aweme_id` | string | Yes | Numeric video ID |
+| `cursor` | integer | No | Pagination cursor; omit for the first page |
+| `count` | integer | No | Page size; default `20` |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `comment_id` | string | 评论 ID |
-| `text` | string | 评论文本 |
-| `like_count` | integer | 点赞数 |
-| `reply_count` | integer | 回复数 |
-| `create_time` | string | RFC3339 评论时间 |
-| `author` | object | 评论作者信息 |
+```bash
+apimux douyin get_video_comments --aweme-id "7489123456789012345"
+apimux douyin get_video_comments --aweme-id "7489123456789012345" --count 20
+```
 
-### 规则
+### Response fields
 
-- `aweme_id` 必须是数字字符串
-- 分页状态放在 `meta.cursor` / `meta.has_more`
-- 总评论数放在 `meta.total`
+| Field | Type | Description |
+|-------|------|-------------|
+| `comment_id` | string | Comment ID |
+| `text` | string | Comment text |
+| `like_count` | integer | Like count |
+| `reply_count` | integer | Reply count |
+| `create_time` | string | RFC3339 comment time |
+| `author` | object | Comment author information |
+
+### Notes
+
+- `aweme_id` must be a numeric string.
+- Pagination state is returned in `meta.cursor` and `meta.has_more`.
+- Total comment count is returned in `meta.total` when available.
 
 ---
 
 ## douyin.get_comment_replies
 
-获取 Douyin 某条父评论下的回复列表。
+List replies under one parent comment.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `aweme_id` | string | 是 | 数字字符串形式的视频 ID |
-| `comment_id` | string | 是 | 父评论 ID |
-| `cursor` | integer | 否 | 回复分页 cursor，首页不传 |
-| `count` | integer | 否 | 回复页大小；默认 20 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `aweme_id` | string | Yes | Numeric video ID |
+| `comment_id` | string | Yes | Parent comment ID |
+| `cursor` | integer | No | Pagination cursor; omit for the first page |
+| `count` | integer | No | Page size; default `20` |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `comment_id` | string | 回复评论 ID |
-| `text` | string | 回复文本 |
-| `like_count` | integer | 点赞数 |
-| `reply_count` | integer | 嵌套回复数 |
-| `create_time` | string | RFC3339 回复时间 |
-| `author` | object | 回复作者信息 |
+```bash
+apimux douyin get_comment_replies --aweme-id "7489123456789012345" --comment-id "1234567890"
+apimux douyin get_comment_replies --aweme-id "7489123456789012345" --comment-id "1234567890" --count 20
+```
 
-### 规则
+### Response fields
 
-- `aweme_id` 必须是数字字符串
-- `comment_id` 必填
-- 分页状态放在 `meta.cursor` / `meta.has_more`
-- 总回复数放在 `meta.total`
+| Field | Type | Description |
+|-------|------|-------------|
+| `comment_id` | string | Reply comment ID |
+| `text` | string | Reply text |
+| `like_count` | integer | Like count |
+| `reply_count` | integer | Nested reply count |
+| `create_time` | string | RFC3339 reply time |
+| `author` | object | Reply author information |
+
+### Notes
+
+- `aweme_id` must be a numeric string.
+- `comment_id` is required.
+- Pagination state is returned in `meta.cursor` and `meta.has_more`.
+- Total reply count is returned in `meta.total` when available.
 
 ---
 
-## 通用规则
+## General notes
 
-- **响应结构与错误处理**：详见 [apimux-shared](../apimux-shared/SKILL.md)
+- See [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure and error handling.
