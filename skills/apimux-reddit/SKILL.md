@@ -1,7 +1,7 @@
 ---
 name: apimux-reddit
 version: 1.0.0
-description: "Reddit 内容查询。提供搜索、subreddit feed、帖子详情和评论能力，适用于话题研究、社区巡检、帖子下钻分析等场景。"
+description: "Reddit content data. Search posts, inspect subreddit feeds, get post details, and collect comments for topic research and community monitoring."
 metadata:
   source: reddit
   requires:
@@ -11,170 +11,197 @@ metadata:
 
 # Reddit
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md)，其中包含响应结构、错误处理等共享规则。**
+Search and inspect Reddit posts, subreddit feeds, post details, and comments. Use this for topic research, community monitoring, and discussion analysis.
 
-Reddit 数据查询，覆盖帖子搜索、subreddit feed、帖子详情和评论列表四个首批能力。
+**Before using:** Read [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure, error handling, pagination metadata, and CLI conventions.
 
-## 快速决策
+## What you can do
 
-- 想按关键词找帖子 → `search`
-- 想看某个 subreddit 最近内容 → `get_subreddit_feed`
-- 已有 `post_id`，想拉帖子详情 → `get_post_detail`
-- 已有 `post_id`，想拉评论 → `get_post_comments`
+- **Find posts by keyword** → `search`
+- **Monitor a subreddit feed** → `get_subreddit_feed`
+- **Inspect one post** → `get_post_detail`
+- **Collect comments for a post** → `get_post_comments`
 
-## Capabilities 概览
+## Available capabilities
 
-| Capability | 说明 | 典型场景 |
-|------------|------|----------|
-| `search` | 搜索 Reddit 内容 | 话题搜索、帖子发现 |
-| `get_subreddit_feed` | 拉取 subreddit feed | 社区巡检、板块追踪 |
-| `get_post_detail` | 获取帖子详情 | 单帖下钻分析 |
-| `get_post_comments` | 获取帖子评论 | 评论抽样、观点分析 |
+| Capability | What it does | When to use |
+|------------|--------------|-------------|
+| `search` | Search Reddit content | Topic search and post discovery |
+| `get_subreddit_feed` | Get a subreddit feed | Monitor a community or board |
+| `get_post_detail` | Get one post's details | Drill into a specific post |
+| `get_post_comments` | Get comments for a post | Sample opinions and discussion |
 
 ---
 
 ## reddit.search
 
-搜索 Reddit 内容。
+Search Reddit content by query.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `query` | string | 是 | 搜索关键词 |
-| `search_type` | string | 否 | `post`、`community`、`comment`、`media`、`people`；默认 `post` |
-| `sort` | string | 否 | `relevance`、`hot`、`top`、`new`、`comments`；默认 `relevance` |
-| `time_range` | string | 否 | `all`、`year`、`month`、`week`、`day`、`hour`；默认 `all` |
-| `after` | string | 否 | 分页 cursor，首页不传 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | Search keyword |
+| `search_type` | string | No | `post`, `community`, `comment`, `media`, or `people`; default `post` |
+| `sort` | string | No | `relevance`, `hot`, `top`, `new`, or `comments`; default `relevance` |
+| `time_range` | string | No | `all`, `year`, `month`, `week`, `day`, or `hour`; default `all` |
+| `after` | string | No | Pagination cursor; omit for the first page |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `post_id` | string | 帖子 ID，格式 `t3_xxxxx` |
-| `title` | string | 标题 |
-| `subreddit` | string | subreddit 名称 |
-| `author` | string | 作者 |
-| `score` | integer | 分数 |
-| `num_comments` | integer | 评论数 |
-| `created_at` | string | RFC3339 发布时间 |
+```bash
+apimux reddit search --query "standing desk"
+apimux reddit search --query "standing desk" --sort "top" --time-range "month"
+```
+
+### Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `post_id` | string | Post ID, usually `t3_xxxxx` |
+| `title` | string | Post title |
+| `subreddit` | string | Subreddit name |
+| `author` | string | Author username |
+| `score` | integer | Reddit score |
+| `num_comments` | integer | Comment count |
+| `created_at` | string | RFC3339 publish time |
 | `permalink` | string | Reddit permalink |
-| `url` | string | 目标链接 |
-| `selftext` | string | 正文 |
-| `thumbnail` | string | 缩略图 |
-| `is_video` | boolean | 是否视频帖 |
+| `url` | string | Target URL |
+| `selftext` | string | Post body text |
+| `thumbnail` | string | Thumbnail URL |
+| `is_video` | boolean | Whether the post is a video post |
 
-### 规则
+### Notes
 
-- `query` 必填
-- `sort` 推荐使用小写值；CLI 也接受大写值并自动转换
-- 分页状态放在 `meta.cursor` / `meta.has_more`
+- `query` is required.
+- Prefer lowercase `sort` values. The CLI also accepts uppercase values and normalizes them.
+- Pagination state is returned in `meta.cursor` and `meta.has_more`.
 
 ---
 
 ## reddit.get_subreddit_feed
 
-拉取单个 subreddit feed。
+Get posts from one subreddit feed.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `subreddit_name` | string | 是 | 不带 `r/` 前缀的 subreddit 名称 |
-| `sort` | string | 否 | `best`、`hot`、`new`、`top`、`controversial`、`rising`；默认 `hot` |
-| `after` | string | 否 | 分页 cursor，首页不传 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `subreddit_name` | string | Yes | Subreddit name without the `r/` prefix |
+| `sort` | string | No | `best`, `hot`, `new`, `top`, `controversial`, or `rising`; default `hot` |
+| `after` | string | No | Pagination cursor; omit for the first page |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `post_id` | string | 帖子 ID，格式 `t3_xxxxx` |
-| `title` | string | 标题 |
-| `subreddit` | string | subreddit 名称 |
-| `author` | string | 作者 |
-| `score` | integer | 分数 |
-| `num_comments` | integer | 评论数 |
-| `created_at` | string | RFC3339 发布时间 |
+```bash
+apimux reddit get_subreddit_feed --subreddit-name "MechanicalKeyboards"
+apimux reddit get_subreddit_feed --subreddit-name "MechanicalKeyboards" --sort "top"
+```
+
+### Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `post_id` | string | Post ID, usually `t3_xxxxx` |
+| `title` | string | Post title |
+| `subreddit` | string | Subreddit name |
+| `author` | string | Author username |
+| `score` | integer | Reddit score |
+| `num_comments` | integer | Comment count |
+| `created_at` | string | RFC3339 publish time |
 | `permalink` | string | Reddit permalink |
-| `url` | string | 目标链接 |
-| `selftext` | string | 正文 |
-| `thumbnail` | string | 缩略图 |
-| `is_video` | boolean | 是否视频帖 |
+| `url` | string | Target URL |
+| `selftext` | string | Post body text |
+| `thumbnail` | string | Thumbnail URL |
+| `is_video` | boolean | Whether the post is a video post |
 
-### 规则
+### Notes
 
-- `subreddit_name` 必填，且不能带 `r/` 前缀
-- 分页状态放在 `meta.cursor` / `meta.has_more`
+- `subreddit_name` is required and must not include `r/`.
+- Pagination state is returned in `meta.cursor` and `meta.has_more`.
 
 ---
 
 ## reddit.get_post_detail
 
-获取单条 Reddit 帖子详情。
+Get details for one Reddit post.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `post_id` | string | 是 | `t3_xxxxx` 形式的帖子 ID |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `post_id` | string | Yes | Post ID in `t3_xxxxx` format |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `post_id` | string | 帖子 ID |
-| `title` | string | 标题 |
-| `subreddit` | string | subreddit 名称 |
-| `author` | string | 作者 |
-| `score` | integer | 分数 |
-| `upvote_ratio` | number | 点赞率 |
-| `num_comments` | integer | 评论数 |
-| `created_at` | string | RFC3339 发布时间 |
+```bash
+apimux reddit get_post_detail --post-id "t3_abcdef"
+```
+
+### Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `post_id` | string | Post ID |
+| `title` | string | Post title |
+| `subreddit` | string | Subreddit name |
+| `author` | string | Author username |
+| `score` | integer | Reddit score |
+| `upvote_ratio` | number | Upvote ratio |
+| `num_comments` | integer | Comment count |
+| `created_at` | string | RFC3339 publish time |
 | `permalink` | string | Reddit permalink |
-| `url` | string | 目标链接 |
-| `selftext` | string | 正文 |
-| `thumbnail` | string | 缩略图 |
-| `is_video` | boolean | 是否视频帖 |
-| `link_flair_text` | string | flair 文本 |
+| `url` | string | Target URL |
+| `selftext` | string | Post body text |
+| `thumbnail` | string | Thumbnail URL |
+| `is_video` | boolean | Whether the post is a video post |
+| `link_flair_text` | string | Link flair text |
 
-### 规则
+### Notes
 
-- `post_id` 必须是 `t3_xxxxx` 格式
-- 帖子不存在时返回 `post_not_found` 错误
+- `post_id` must use `t3_xxxxx` format.
+- Missing posts return `post_not_found`.
 
 ---
 
 ## reddit.get_post_comments
 
-获取 Reddit 帖子评论列表。
+Get comments for one Reddit post.
 
-### 参数
+### Parameters
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `post_id` | string | 是 | `t3_xxxxx` 形式的帖子 ID |
-| `sort_type` | string | 否 | `confidence`、`new`、`top`、`hot`、`controversial`、`old`、`random`；默认 `confidence` |
-| `after` | string | 否 | 分页 cursor，首页不传 |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `post_id` | string | Yes | Post ID in `t3_xxxxx` format |
+| `sort_type` | string | No | `confidence`, `new`, `top`, `hot`, `controversial`, `old`, or `random`; default `confidence` |
+| `after` | string | No | Pagination cursor; omit for the first page |
 
-### 返回字段
+### CLI usage
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `id` | string | 评论 ID |
-| `author` | string | 评论作者 |
-| `body` | string | 评论内容 |
-| `score` | integer | 评论分数 |
-| `created_at` | string | RFC3339 发布时间 |
-| `parent_id` | string | 父节点 ID |
-| `depth` | integer | 评论层级 |
+```bash
+apimux reddit get_post_comments --post-id "t3_abcdef"
+apimux reddit get_post_comments --post-id "t3_abcdef" --sort-type "top"
+```
 
-### 规则
+### Response fields
 
-- `post_id` 必须是 `t3_xxxxx` 格式
-- 分页状态放在 `meta.cursor` / `meta.has_more`
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Comment ID |
+| `author` | string | Comment author |
+| `body` | string | Comment body |
+| `score` | integer | Comment score |
+| `created_at` | string | RFC3339 publish time |
+| `parent_id` | string | Parent node ID |
+| `depth` | integer | Comment depth |
+
+### Notes
+
+- `post_id` must use `t3_xxxxx` format.
+- Pagination state is returned in `meta.cursor` and `meta.has_more`.
 
 ---
 
-## 通用规则
+## General notes
 
-- **响应结构与错误处理**：详见 [apimux-shared](../apimux-shared/SKILL.md)
+- See [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure and error handling.

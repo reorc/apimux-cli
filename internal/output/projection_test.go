@@ -340,7 +340,7 @@ func TestProjectCapabilityCompactMetaAdsKeepsSnapshotAndPlatforms(t *testing.T) 
 			"start_date":"2026-01-01T00:00:00Z",
 			"end_date":"2026-01-31T00:00:00Z",
 			"is_active":true,
-			"publisher_platforms":["facebook","instagram"],
+			"publisher_platform":["facebook","instagram"],
 			"snapshot":{"body":"hello","title":"world"},
 			"collation_count":2
 		}
