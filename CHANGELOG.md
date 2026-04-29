@@ -2,6 +2,17 @@
 
 All notable changes to APIMux CLI are documented here.
 
+## [1.1.2] - 2026-04-29
+
+### Fixed
+
+- Improved dynamic capability help output for schema-backed commands.
+- Improved CLI handling of non-envelope HTTP error responses.
+
+### Documentation
+
+- Converted bundled `apimux-*` skill docs to English, user-facing guidance.
+
 ## [1.1.1] - 2026-04-28
 
 ### Fixed
