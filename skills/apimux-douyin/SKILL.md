@@ -83,29 +83,41 @@ Get details for one Douyin video.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `aweme_id` | string | Yes | Numeric video ID |
+| `share_url` | string | Conditional | Douyin share URL. Use either `share_url` or `aweme_id`, not both. |
+| `aweme_id` | string | Conditional | Numeric video ID. Use either `aweme_id` or `share_url`, not both. |
 
 ### CLI usage
 
 ```bash
 apimux douyin get_video_detail --aweme-id "7489123456789012345"
+apimux douyin get_video_detail --share-url "https://v.douyin.com/hzYmbgvLc4k/"
 ```
 
 ### Response fields
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `platform` | string | Always `douyin` |
 | `aweme_id` | string | Video ID |
+| `caption` | string | Video caption |
 | `description` | string | Video description |
 | `create_time` | string | RFC3339 publish time |
 | `author` | object | Author information |
+| `stats` | object | `play`, `digg`, `comment`, and `share` counts |
 | `statistics` | object | Like/comment/share/play statistics |
 | `video` | object | Video duration and aspect information |
+| `video_url` | string | Signed video playback URL |
+| `cover` | string | Cover image URL |
 | `share_url` | string | Share URL |
+| `duration` | integer | Video duration in milliseconds |
+| `music` | object | Music summary when available |
+| `region` | string | Video region when available |
 
 ### Notes
 
+- Provide exactly one identity input: `share_url` or `aweme_id`.
 - `aweme_id` must be a numeric string.
+- `video_url` and cover/music URLs are signed provider URLs and may expire. Download or store them immediately if you need durable media access.
 - Missing videos return `video_not_found`.
 
 ---

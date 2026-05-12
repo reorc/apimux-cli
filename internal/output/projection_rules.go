@@ -336,7 +336,7 @@ var projectionRules = map[string]projectionRule{
 	},
 	"douyin.get_video_detail": {
 		Compact: projectionSpec{
-			PassThrough: true,
+			Scalars: videoDetailScalarFields("aweme_id"),
 		},
 	},
 	"douyin.search_videos": {
@@ -663,6 +663,11 @@ var projectionRules = map[string]projectionRule{
 			},
 		},
 	},
+	"tiktok.get_video_detail": {
+		Compact: projectionSpec{
+			Scalars: videoDetailScalarFields("video_id"),
+		},
+	},
 	"tiktok.search_videos": {
 		Compact: projectionSpec{
 			Tables: []tableRule{
@@ -776,4 +781,24 @@ var projectionRules = map[string]projectionRule{
 			},
 		},
 	},
+}
+
+func videoDetailScalarFields(identityField string) []fieldRule {
+	return []fieldRule{
+		{From: "platform", To: "platform"},
+		{From: identityField, To: identityField},
+		{From: "caption", To: "caption"},
+		{From: "description", To: "description"},
+		{From: "create_time", To: "create_time"},
+		{From: "share_url", To: "share_url"},
+		{From: "video_url", To: "video_url"},
+		{From: "cover", To: "cover"},
+		{From: "duration", To: "duration"},
+		{From: "region", To: "region"},
+		{From: "author", To: "author"},
+		{From: "stats", To: "stats"},
+		{From: "statistics", To: "statistics"},
+		{From: "video", To: "video"},
+		{From: "music", To: "music"},
+	}
 }

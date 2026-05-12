@@ -18,6 +18,7 @@ Search TikTok content and inspect TikTok Shop product data. Use this for content
 ## What you can do
 
 - **Find videos by topic** → `search_videos`
+- **Inspect one video** → `get_video_detail`
 - **Analyze comments under a video** → `list_comments`
 - **List products from a TikTok Shop seller** → `shop_products`
 - **Inspect one TikTok Shop product** → `shop_product_info`
@@ -28,6 +29,7 @@ Search TikTok content and inspect TikTok Shop product data. Use this for content
 | Capability | What it does | When to use |
 |------------|--------------|-------------|
 | `search_videos` | Search TikTok videos | Content research and competitor video discovery |
+| `get_video_detail` | Get details for one TikTok video | Inspect metadata, author, engagement, and media URLs |
 | `list_comments` | List video comments | Audience feedback and comment insights |
 | `shop_products` | List seller products | Seller and product-selection analysis |
 | `shop_product_info` | Get product details | Product research and cross-platform comparison |
@@ -81,6 +83,51 @@ apimux tiktok search_videos --keyword "desk setup" --sort-by "likes" --publish-t
 - Prefer the string enum values above. For backward compatibility, the CLI also accepts legacy numeric values for `sort_by` (`0/1/2`) and `publish_time` (`0/1/7/30/90/180`).
 - `count` must be in `1..35`.
 - Pagination state is returned in `meta.cursor` and `meta.has_more`.
+
+---
+
+## tiktok.get_video_detail
+
+Get details for one TikTok video by share URL or video ID.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `share_url` | string | Conditional | TikTok share URL. Use either `share_url` or `aweme_id`, not both. |
+| `aweme_id` | string | Conditional | Numeric TikTok video ID. Use either `aweme_id` or `share_url`, not both. |
+| `region` | string | No | ISO alpha-2 country code for `aweme_id` lookup only; default `US`. Do not pass with `share_url`. |
+
+### CLI usage
+
+```bash
+apimux tiktok get_video_detail --share-url "https://www.tiktok.com/t/ZTFNEj8Hk/"
+apimux tiktok get_video_detail --aweme-id "7350810998023949599" --region "US"
+```
+
+### Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `platform` | string | Always `tiktok` |
+| `video_id` | string | TikTok video ID |
+| `caption` | string | Video caption |
+| `create_time` | string | RFC3339 publish time |
+| `share_url` | string | Share URL |
+| `video_url` | string | Signed video playback URL |
+| `cover` | string | Cover image URL |
+| `duration` | integer | Video duration in milliseconds |
+| `author` | object | Author summary |
+| `stats` | object | `play`, `digg`, `comment`, and `share` counts |
+| `music` | object | Music summary when available |
+| `region` | string | Video region when available |
+
+### Notes
+
+- Provide exactly one identity input: `share_url` or `aweme_id`.
+- `region` is valid only with `aweme_id`; passing it with `share_url` returns a validation error.
+- `video_url` and cover/music URLs are signed provider URLs and may expire. Download or store them immediately if you need durable media access.
+- Missing videos return `video_not_found`.
 
 ---
 
