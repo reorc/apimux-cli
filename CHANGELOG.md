@@ -2,6 +2,24 @@
 
 All notable changes to APIMux CLI are documented here.
 
+## [1.1.5] - 2026-05-12
+
+### Added
+
+- Implemented `apimux upgrade` for direct binary installs. The command now
+  checks the release manifest, downloads the matching platform archive, verifies
+  the checksum, extracts the `apimux` binary, and atomically replaces the
+  current executable.
+
+### Fixed
+
+- Replaced the previous `cli_upgrade_not_implemented` response with either a
+  successful upgrade result or a clear package-manager/install-script guidance
+  error when the current executable cannot be safely replaced.
+- Made schema-bound source command help degrade gracefully when the service
+  schema cannot be reached, instead of returning a transport error for
+  `--help`.
+
 ## [1.1.4] - 2026-05-12
 
 ### Fixed
