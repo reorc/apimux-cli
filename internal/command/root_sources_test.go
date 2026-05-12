@@ -564,6 +564,39 @@ func TestTikTokSearchVideosCallsService(t *testing.T) {
 	assertCompactTableOutputContains(t, stdout.String(), `"columns":["video_id","video_url","description","create_time","like_count","comment_count","share_count","play_count","cover_image","duration","region","is_ad","author"]`, `"rows":[]`)
 }
 
+func TestTikTokGetVideoDetailCallsService(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if maybeServeSchema(w, r) {
+			return
+		}
+		if r.URL.Path != "/v1/capabilities/tiktok.get_video_detail" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"platform":"tiktok","video_id":"7359655005701311786","caption":"caption","video_url":"https://cdn.example/video.mp4","cover":"https://cdn.example/cover.jpg","stats":{"play":100,"digg":10,"comment":2,"share":3}},"meta":{"capability":"tiktok.get_video_detail"}}`))
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"tiktok", "get_video_detail",
+		"--share-url", "https://www.tiktok.com/t/ZTFNEj8Hk/",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	assertDataOnlyOutputContains(t, stdout.String(), `"video_id":"7359655005701311786"`)
+	if !strings.Contains(stdout.String(), `"platform":"tiktok"`) {
+		t.Fatalf("expected platform field, got %s", stdout.String())
+	}
+}
+
 func TestMetaAdsSearchCallsService(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if maybeServeSchema(w, r) {
@@ -690,6 +723,39 @@ func TestDouyinGetVideoDetailCallsService(t *testing.T) {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
 	assertDataOnlyOutputContains(t, stdout.String(), `"aweme_id":"7489123456789012345"`)
+}
+
+func TestDouyinGetVideoDetailAcceptsShareURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if maybeServeSchema(w, r) {
+			return
+		}
+		if r.URL.Path != "/v1/capabilities/douyin.get_video_detail" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"platform":"douyin","aweme_id":"7627062342472404473","caption":"caption","video_url":"https://cdn.example/video.mp4","cover":"https://cdn.example/cover.jpg","stats":{"play":0,"digg":10,"comment":2,"share":3}},"meta":{"capability":"douyin.get_video_detail"}}`))
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"douyin", "get_video_detail",
+		"--share-url", "https://v.douyin.com/hzYmbgvLc4k/",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	assertDataOnlyOutputContains(t, stdout.String(), `"aweme_id":"7627062342472404473"`)
+	if !strings.Contains(stdout.String(), `"platform":"douyin"`) {
+		t.Fatalf("expected platform field, got %s", stdout.String())
+	}
 }
 
 func TestDouyinGetCommentRepliesCallsService(t *testing.T) {

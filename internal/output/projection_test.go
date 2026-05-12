@@ -544,7 +544,7 @@ func TestProjectCapabilityCompactDouyinGetVideoDetailPassThrough(t *testing.T) {
 	if err := json.Unmarshal(body, &got); err != nil {
 		t.Fatalf("unmarshal compact projection: %v", err)
 	}
-	// PassThrough: full canonical object preserved
+	// Compact projection keeps both legacy and new canonical detail fields.
 	author, _ := got["author"].(map[string]any)
 	if author["user_id"] != "u1" {
 		t.Fatalf("expected author.user_id in pass-through output, got %#v", got)
@@ -552,6 +552,40 @@ func TestProjectCapabilityCompactDouyinGetVideoDetailPassThrough(t *testing.T) {
 	stats, _ := got["statistics"].(map[string]any)
 	if stats["play_count"] == nil {
 		t.Fatalf("expected statistics.play_count in pass-through output, got %#v", got)
+	}
+}
+
+func TestProjectCapabilityCompactTikTokGetVideoDetailKeepsCanonicalFields(t *testing.T) {
+	payload := json.RawMessage(`{
+		"platform":"tiktok",
+		"video_id":"7359655005701311786",
+		"caption":"Test video",
+		"create_time":"2026-04-22T00:00:00Z",
+		"share_url":"https://www.tiktok.com/@u/video/7359655005701311786",
+		"video_url":"https://cdn.example/video.mp4",
+		"cover":"https://cdn.example/cover.jpg",
+		"duration":3000,
+		"region":"US",
+		"author":{"user_id":"u1","nickname":"Creator"},
+		"stats":{"play":100,"digg":10,"comment":2,"share":3},
+		"music":{"music_id":"m1","title":"Song"}
+	}`)
+
+	body, err := projectCapability("tiktok.get_video_detail", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("unmarshal compact projection: %v", err)
+	}
+	if got["platform"] != "tiktok" || got["video_id"] != "7359655005701311786" || got["video_url"] == "" || got["cover"] == "" {
+		t.Fatalf("expected canonical TikTok detail fields, got %#v", got)
+	}
+	stats, _ := got["stats"].(map[string]any)
+	if stats["play"] != float64(100) || stats["digg"] != float64(10) || stats["comment"] != float64(2) || stats["share"] != float64(3) {
+		t.Fatalf("expected compact stats, got %#v", got)
 	}
 }
 
@@ -764,6 +798,7 @@ func TestProjectionRulesCoverAllAgentTestCapabilities(t *testing.T) {
 		"reddit.search",
 		"reddit.get_subreddit_feed",
 		"tiktok.search_videos",
+		"tiktok.get_video_detail",
 		"tiktok.list_comments",
 		"xiaohongshu.search_notes",
 		"xiaohongshu.get_note_detail",
