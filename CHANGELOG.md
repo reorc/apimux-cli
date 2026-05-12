@@ -2,6 +2,19 @@
 
 All notable changes to APIMux CLI are documented here.
 
+## [1.1.3] - 2026-05-12
+
+### Added
+
+- Added the `apimux tiktok get_video_detail` shortcut for TikTok video detail
+  lookup by share URL or `aweme_id`.
+- Added compact output projection for TikTok and Douyin video detail responses.
+
+### Documentation
+
+- Updated bundled TikTok and Douyin skills with video detail examples, expiring
+  media URL notes, and `video_not_found` guidance.
+
 ## [1.1.2] - 2026-04-29
 
 ### Fixed
