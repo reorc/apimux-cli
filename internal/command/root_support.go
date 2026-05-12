@@ -12,6 +12,7 @@ import (
 
 	"github.com/reorc/apimux-cli/internal/buildinfo"
 	"github.com/reorc/apimux-cli/internal/client"
+	"github.com/reorc/apimux-cli/internal/config"
 	"github.com/reorc/apimux-cli/internal/output"
 )
 
@@ -214,7 +215,7 @@ func applyPersistentArgs(runCtx *runContext, args []string) error {
 	}
 
 	if strings.TrimSpace(baseURL) == "" {
-		baseURL = "http://127.0.0.1:8081"
+		baseURL = config.DefaultBaseURL
 	}
 	parsedOutput, ok := output.ParseBodyOutput(bodyOutput)
 	if !ok {

@@ -10,6 +10,8 @@ import (
 
 const envConfigDir = "APIMUX_CONFIG_DIR"
 
+const DefaultBaseURL = "https://apimux.io/api/core"
+
 type Config struct {
 	BaseURL string `json:"base_url,omitempty"`
 	APIKey  string `json:"api_key,omitempty"`
@@ -32,7 +34,7 @@ func Load() (Config, error) {
 
 func LoadDetailed() (Loaded, error) {
 	cfg := Config{
-		BaseURL: "http://127.0.0.1:8081",
+		BaseURL: DefaultBaseURL,
 	}
 	sources := map[string]string{
 		"base_url": "default",

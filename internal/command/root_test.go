@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/reorc/apimux-cli/internal/config"
 )
 
 func TestInvalidOutputReturnsNonZero(t *testing.T) {
@@ -138,6 +140,59 @@ func TestSchemaCapabilitiesJSONFlag(t *testing.T) {
 	output := stdout.String()
 	if !strings.Contains(output, `["amazon.get_product","reddit.search"]`) {
 		t.Fatalf("expected JSON array output, got %s", output)
+	}
+}
+
+func TestHelpShowsProductionBaseURLDefault(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("APIMUX_CONFIG_DIR", tempDir)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{"--help"})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `default "`+config.DefaultBaseURL+`"`) {
+		t.Fatalf("expected production base URL default in help, got %s", stdout.String())
+	}
+}
+
+func TestConfigShowsProductionBaseURLDefault(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("APIMUX_CONFIG_DIR", tempDir)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{"config"})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"base_url": "`+config.DefaultBaseURL+`"`) {
+		t.Fatalf("expected production base URL in config output, got %s", stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"base_url": "default"`) {
+		t.Fatalf("expected default source in config output, got %s", stdout.String())
+	}
+}
+
+func TestPersistentArgFallbackUsesProductionBaseURL(t *testing.T) {
+	runCtx := &runContext{}
+	if err := applyPersistentArgs(runCtx, nil); err != nil {
+		t.Fatalf("apply persistent args: %v", err)
+	}
+	if runCtx.cfg.BaseURL != config.DefaultBaseURL {
+		t.Fatalf("expected production base URL fallback, got %s", runCtx.cfg.BaseURL)
 	}
 }
 

@@ -6,6 +6,8 @@ Default install path:
 curl -fsSL https://github.com/reorc/apimux-cli/releases/latest/download/install.sh | sh
 ```
 
+After installation, `apimux` defaults to the production APIMux service at `https://apimux.io/api/core`. Use `APIMUX_BASE_URL`, `--base-url`, or `apimux config set --base-url ...` only when you need to point the CLI at a local or private service.
+
 Environment variables:
 
 - `APIMUX_VERSION`: install a pinned version such as `v1.0.0`

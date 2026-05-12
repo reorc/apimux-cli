@@ -26,6 +26,19 @@ func TestLoadPrefersEnvOverFile(t *testing.T) {
 	}
 }
 
+func TestLoadDefaultsToProductionBaseURL(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv(envConfigDir, tempDir)
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.BaseURL != DefaultBaseURL {
+		t.Fatalf("expected default base URL %s, got %s", DefaultBaseURL, cfg.BaseURL)
+	}
+}
+
 func TestSaveWritesConfigFile(t *testing.T) {
 	tempDir := t.TempDir()
 	t.Setenv(envConfigDir, tempDir)
