@@ -40,11 +40,16 @@ func newSchemaBoundCapabilityCommand(runCtx *runContext, capability, use, short,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			args = stripPersistentArgs(args)
+			wantsHelp := wantsSchemaBoundHelp(args)
 			spec, err := fetchCapabilitySchema(cmd.Context(), runCtx, capability)
 			if err != nil {
+				if wantsHelp {
+					cmd.Long = fmt.Sprintf("%s\n\nDetailed flags are loaded from the APIMux service schema. Schema lookup failed: %s", short, err.Error())
+					return cmd.Help()
+				}
 				return err
 			}
-			if wantsSchemaBoundHelp(args) {
+			if wantsHelp {
 				return writeSchemaBoundHelp(cmd, spec)
 			}
 			if len(spec.Parameters) == 0 {

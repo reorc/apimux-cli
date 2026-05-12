@@ -106,6 +106,43 @@ func TestUpgradeCheckReportsVersionStatus(t *testing.T) {
 	}
 }
 
+func TestUpgradeReportsUpToDate(t *testing.T) {
+	originalVersion := buildinfo.Version
+	t.Cleanup(func() {
+		buildinfo.Version = originalVersion
+	})
+	buildinfo.Version = "1.2.0"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"latest_version":"1.2.0"}`))
+	}))
+	defer server.Close()
+
+	t.Setenv("APIMUX_CLI_RELEASE_MANIFEST_URL", server.URL)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{"upgrade"})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal payload: %v", err)
+	}
+	if payload["status"] != "up_to_date" {
+		t.Fatalf("unexpected status: %#v", payload)
+	}
+	if payload["message"] != "apimux is already up to date" {
+		t.Fatalf("unexpected message: %#v", payload)
+	}
+}
+
 func TestConfigInitFollowedByGoogleTrendsUsesSavedConfig(t *testing.T) {
 	tempDir := t.TempDir()
 	t.Setenv("APIMUX_CONFIG_DIR", tempDir)

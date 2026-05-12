@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/reorc/apimux-cli/internal/buildinfo"
 	"github.com/reorc/apimux-cli/internal/client"
@@ -326,20 +327,23 @@ func (r *Root) newUpgradeCommand() *cobra.Command {
 		Use:   "upgrade",
 		Short: "Inspect or run CLI updates",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !check {
-				return &cliError{
-					exitCode: 2,
-					code:     "cli_upgrade_not_implemented",
-					message:  "upgrade currently supports --check only",
-				}
-			}
-
 			manifestURL := releaseManifestURL()
-			result, err := update.Check(cmd.Context(), &http.Client{}, buildinfo.Current().Version, manifestURL)
+			httpClient := &http.Client{Timeout: 60 * time.Second}
+			var result any
+			var err error
+			if check {
+				result, err = update.Check(cmd.Context(), httpClient, buildinfo.Current().Version, manifestURL)
+			} else {
+				result, err = update.Upgrade(cmd.Context(), httpClient, buildinfo.Current().Version, manifestURL, "")
+			}
 			if err != nil {
+				code := "cli_upgrade_failed"
+				if check {
+					code = "cli_upgrade_check_failed"
+				}
 				return &cliError{
 					exitCode: 1,
-					code:     "cli_upgrade_check_failed",
+					code:     code,
 					message:  err.Error(),
 				}
 			}

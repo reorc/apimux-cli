@@ -74,6 +74,15 @@ apimux schema show amazon.get_product
 apimux schema list
 ```
 
+Check for updates or upgrade direct binary installs:
+
+```bash
+apimux upgrade --check
+apimux upgrade
+```
+
+If your `apimux` executable is managed by a package manager or is installed as a symlink, use that package manager or rerun the install script instead.
+
 Useful flags:
 
 - `--debug`: print the sanitized response envelope

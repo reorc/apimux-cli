@@ -985,6 +985,31 @@ func TestRedditSearchHelpPrintsSchemaFlags(t *testing.T) {
 	}
 }
 
+func TestSchemaBoundHelpFallsBackWhenSchemaUnavailable(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", "http://127.0.0.1:1",
+		"amazon", "get_product",
+		"--help",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s, stdout=%s", exitCode, stderr.String(), stdout.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Fetch one Amazon product") || !strings.Contains(output, "Schema lookup failed") {
+		t.Fatalf("expected fallback help with schema lookup warning, got %s", output)
+	}
+	if strings.Contains(output, "cli_transport_error") {
+		t.Fatalf("expected help fallback, got transport error: %s", output)
+	}
+}
+
 func TestRedditGetPostDetailCallsService(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if maybeServeSchema(w, r) {
