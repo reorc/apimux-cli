@@ -122,7 +122,7 @@ func (r *Root) newCommand(runCtx *runContext) *cobra.Command {
 			cfg := runCtx.cfg
 			cfg.BaseURL = strings.TrimSpace(baseURL)
 			if cfg.BaseURL == "" {
-				cfg.BaseURL = "http://127.0.0.1:8081"
+				cfg.BaseURL = config.DefaultBaseURL
 			}
 
 			bodyOutput, ok := output.ParseBodyOutput(outputMode)

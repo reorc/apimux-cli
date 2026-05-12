@@ -2,6 +2,20 @@
 
 All notable changes to APIMux CLI are documented here.
 
+## [1.1.4] - 2026-05-12
+
+### Fixed
+
+- Changed the fresh-install default APIMux service URL from local development
+  (`http://127.0.0.1:8081`) to production (`https://apimux.io/api/core`).
+- Kept local/private service usage available through `APIMUX_BASE_URL`,
+  `--base-url`, or `apimux config set --base-url ...`.
+
+### Documentation
+
+- Clarified that localhost is a development override, not the default product
+  endpoint.
+
 ## [1.1.3] - 2026-05-12
 
 ### Added

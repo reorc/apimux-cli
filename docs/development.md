@@ -19,6 +19,6 @@ make test
 make release-build
 ```
 
-Local config is stored under `APIMUX_CONFIG_DIR` when set, otherwise `~/.apimux/config.json`. Older configs under the platform user config directory are still read as a fallback and are migrated on the next write.
+Local config is stored under `APIMUX_CONFIG_DIR` when set, otherwise `~/.apimux/config.json`. Older configs under the platform user config directory are still read as a fallback and are migrated on the next write. Fresh installs default to the production APIMux service at `https://apimux.io/api/core`.
 
-Use `apimux auth login --web-url http://localhost:<port>` to exercise browser-assisted CLI auth against a local web app without persisting the web URL. For CI or manual API key setup, use `apimux config set --base-url ... --api-key ...`.
+Use `apimux auth login --web-url http://localhost:<port>` to exercise browser-assisted CLI auth against a local web app without persisting the web URL. Use `APIMUX_BASE_URL`, `--base-url`, or `apimux config set --base-url ...` to point CLI capability calls at a local service such as `http://127.0.0.1:8081`. For CI or manual API key setup against production, `apimux config set --api-key ...` is enough unless you intentionally need a non-production service.
