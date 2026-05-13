@@ -22,6 +22,8 @@ Search TikTok content and inspect TikTok Shop product data. Use this for content
 - **Analyze comments under a video** → `list_comments`
 - **List products from a TikTok Shop seller** → `shop_products`
 - **Inspect one TikTok Shop product** → `shop_product_info`
+- **Search TikTok Shop products by keyword** → `search_products`
+- **Browse TikTok Shop product reviews** → `product_reviews`
 - **Validate a market across sources** → use `search_videos` for content demand, then [`amazon.search_products`](../apimux-amazon/SKILL.md) for supply-side checks
 
 ## Available capabilities
@@ -33,6 +35,8 @@ Search TikTok content and inspect TikTok Shop product data. Use this for content
 | `list_comments` | List video comments | Audience feedback and comment insights |
 | `shop_products` | List seller products | Seller and product-selection analysis |
 | `shop_product_info` | Get product details | Product research and cross-platform comparison |
+| `search_products` | Search shop products by keyword | Keyword-level shop discovery and trend scouting |
+| `product_reviews` | List product reviews | Product sentiment, rating distribution, UGC mining |
 
 ---
 
@@ -223,12 +227,13 @@ Get details for one TikTok Shop product.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product_id` | string | Yes | Product ID |
-| `region` | string | No | Only `US` is supported; default `US` |
+| `region` | string | No | `US`, `GB`, `SG`, `MY`, `PH`, `TH`, `VN`, or `ID`; default `US` |
 
 ### CLI usage
 
 ```bash
 apimux tiktok shop_product_info --product-id "1729384756"
+apimux tiktok shop_product_info --product-id "1729384756" --region "GB"
 ```
 
 ### Response fields
@@ -252,12 +257,106 @@ apimux tiktok shop_product_info --product-id "1729384756"
 ### Notes
 
 - `product_id` is required.
-- `region` currently supports only `US`.
+- `region` defaults to `US` and accepts the 8 supported markets listed above.
 - Missing products return `product_not_found`.
+
+---
+
+## tiktok.search_products
+
+Search TikTok Shop products by keyword.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `keyword` | string | Yes | Search keyword |
+| `region` | string | No | `US`, `GB`, `SG`, `MY`, `PH`, `TH`, `VN`, or `ID`; default `US` |
+| `cursor` | string | No | Pagination token from previous `meta.cursor` |
+| `offset` | integer | No | Result offset, `>= 0`; default `0` |
+| `count` | integer | No | Number of products, `1..200`; default `20` |
+
+### CLI usage
+
+```bash
+apimux tiktok search_products --keyword "labubu"
+apimux tiktok search_products --keyword "labubu" --region "GB" --count 40
+```
+
+### Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `product_id` | string | Product ID |
+| `product_name` | string | Product name |
+| `product_cover` | string | Product cover image |
+| `product_sold_count` | integer | Sold count |
+| `format_available_price` | string | Current price text |
+| `format_origin_price` | string | Original price text |
+| `discount` | string | Discount text |
+| `rating` | number | Product rating when available |
+| `review_count` | integer | Review count when available |
+
+### Notes
+
+- `keyword` is required.
+- `region` must be one of the 8 supported markets.
+- Pagination state is returned in `meta.cursor` and `meta.has_more`.
+
+---
+
+## tiktok.product_reviews
+
+List reviews for one TikTok Shop product.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `product_id` | string | Yes | TikTok Shop product ID |
+| `region` | string | No | `US`, `GB`, `SG`, `MY`, `PH`, `TH`, `VN`, or `ID`; default `US` |
+| `page` | integer | No | Page number starting at `1`; default `1` |
+| `sort` | string | No | `default` or `latest`; default `default` |
+| `media_filter` | string | No | `all`, `media`, or `verified`; default `all` |
+| `star` | string | No | `all` or `1`..`5`; default `all` |
+| `count` | integer | No | Number of reviews, `1..100`; default `20` |
+
+### CLI usage
+
+```bash
+apimux tiktok product_reviews --product-id "1729556436942358002"
+apimux tiktok product_reviews --product-id "1729556436942358002" --sort "latest" --star "5" --media-filter "media"
+```
+
+### Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `review_id` | string | Review ID |
+| `rating` | integer | Star rating, `1..5` |
+| `content` | string | Review content |
+| `create_time` | string | RFC3339 timestamp when available |
+| `verified_purchase` | boolean | Verified purchase indicator |
+| `like_count` | integer | Likes on this review |
+| `medias` | object[] | Review media entries `{type, url}` |
+| `author` | object | `user_id`, `nickname`, `avatar` |
+| `seller_reply` | object | Seller reply payload when present |
+
+### Notes
+
+- `product_id` is required.
+- The underlying provider endpoint is documented for Americas and Europe (e.g.
+  `US`, `GB`). For Southeast Asia regions (`SG`, `MY`, `PH`, `TH`, `VN`, `ID`)
+  results may be empty.
+- Pagination state is returned in `meta.has_more`, `meta.total`, and
+  `meta.cursor` (the current page number).
+- Review summary is surfaced in `meta.resolved_filters.average_rating` and
+  `meta.resolved_filters.star_distribution` when present.
 
 ---
 
 ## General notes
 
 - See [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure and error handling.
-- TikTok Shop capabilities currently support only the US market.
+- TikTok Shop capabilities support the TikHub region list: `US, GB, SG, MY, PH, TH, VN, ID`. `shop_products` currently remains US-only; the other shop capabilities accept the full list with `US` as the default.
+
