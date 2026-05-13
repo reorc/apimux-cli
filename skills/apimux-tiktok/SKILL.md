@@ -301,6 +301,7 @@ apimux tiktok search_products --keyword "labubu" --region "GB" --count 40
 
 - `keyword` is required.
 - `region` must be one of the 8 supported markets.
+- First-page requests send an empty `page_token` upstream; subsequent pages use `meta.cursor`.
 - Pagination state is returned in `meta.cursor` and `meta.has_more`.
 
 ---
@@ -359,4 +360,3 @@ apimux tiktok product_reviews --product-id "1729556436942358002" --sort "latest"
 
 - See [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure and error handling.
 - TikTok Shop capabilities support the TikHub region list: `US, GB, SG, MY, PH, TH, VN, ID`. `shop_products` currently remains US-only; the other shop capabilities accept the full list with `US` as the default.
-
