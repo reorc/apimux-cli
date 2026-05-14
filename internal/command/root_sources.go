@@ -169,14 +169,16 @@ func (r *Root) newTiktokCommand(runCtx *runContext) *cobra.Command {
 	return newStaticSourceCommand(
 		"tiktok",
 		"TikTok video, comment, and shop data",
-		"TikTok video, comment, and shop data.\n\nUse this command to search TikTok videos, inspect video details, list comments, and query TikTok Shop products and product details.",
-		"  apimux tiktok search_videos --keyword laptop\n  apimux tiktok get_video_detail --share-url https://www.tiktok.com/t/ZTFNEj8Hk/\n  apimux tiktok shop_products --seller-id 123456",
-		"search_videos, get_video_detail, list_comments, shop_products, shop_product_info",
+		"TikTok video, comment, and shop data.\n\nUse this command to search TikTok videos, inspect video details, list comments, search TikTok Shop products, query seller products and product details, and browse product reviews.",
+		"  apimux tiktok search_videos --keyword laptop\n  apimux tiktok get_video_detail --share-url https://www.tiktok.com/t/ZTFNEj8Hk/\n  apimux tiktok shop_products --seller-id 123456\n  apimux tiktok search_products --keyword labubu --region US\n  apimux tiktok product_reviews --product-id 1729556436942358002 --region US",
+		"search_videos, get_video_detail, list_comments, shop_products, shop_product_info, search_products, product_reviews",
 		newSchemaBoundCapabilityCommand(runCtx, "tiktok.search_videos", "search_videos", "Search TikTok videos", "tiktok search_videos"),
 		newSchemaBoundCapabilityCommand(runCtx, "tiktok.get_video_detail", "get_video_detail", "Fetch one TikTok video detail", "tiktok get_video_detail"),
 		newSchemaBoundCapabilityCommand(runCtx, "tiktok.list_comments", "list_comments", "List TikTok video comments", "tiktok list_comments"),
 		newSchemaBoundCapabilityCommand(runCtx, "tiktok.shop_products", "shop_products", "List TikTok Shop seller products", "tiktok shop_products"),
 		newSchemaBoundCapabilityCommand(runCtx, "tiktok.shop_product_info", "shop_product_info", "Fetch one TikTok Shop product detail", "tiktok shop_product_info"),
+		newSchemaBoundCapabilityCommand(runCtx, "tiktok.search_products", "search_products", "Search TikTok Shop products", "tiktok search_products"),
+		newSchemaBoundCapabilityCommand(runCtx, "tiktok.product_reviews", "product_reviews", "List TikTok Shop product reviews", "tiktok product_reviews"),
 	)
 }
 

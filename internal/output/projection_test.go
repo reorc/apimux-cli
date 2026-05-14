@@ -821,6 +821,8 @@ func TestProjectionRulesCoverAllAgentTestCapabilities(t *testing.T) {
 		"reddit.get_post_comments",
 		"tiktok.shop_products",
 		"tiktok.shop_product_info",
+		"tiktok.search_products",
+		"tiktok.product_reviews",
 		"xiaohongshu.get_note_comments",
 		"douyin.get_comment_replies",
 	}
