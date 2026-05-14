@@ -1,7 +1,7 @@
 ---
 name: apimux-tiktok
 version: 1.0.0
-description: "TikTok content and TikTok Shop data. Search videos, analyze comments, list shop products, and inspect product details for content research and commerce analysis."
+description: "TikTok content and TikHub-backed TikTok Shop data. Search videos, analyze comments, list shop products, search products, browse reviews, and inspect product details for content research and commerce analysis."
 metadata:
   source: tiktok
   requires:
@@ -11,7 +11,7 @@ metadata:
 
 # TikTok
 
-Search TikTok content and inspect TikTok Shop product data. Use this for content research, creator/product analysis, shopping research, and cross-platform market validation.
+Search TikTok content and inspect TikHub-backed TikTok Shop product data. Use this for content research, creator/product analysis, shopping research, and cross-platform market validation.
 
 **Before using:** Read [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure, error handling, pagination metadata, and CLI conventions.
 
@@ -22,8 +22,8 @@ Search TikTok content and inspect TikTok Shop product data. Use this for content
 - **Analyze comments under a video** → `list_comments`
 - **List products from a TikTok Shop seller** → `shop_products`
 - **Inspect one TikTok Shop product** → `shop_product_info`
-- **Search TikTok Shop products by keyword** → `search_products`
-- **Browse TikTok Shop product reviews** → `product_reviews`
+- **Search TikHub TikTok Shop products by keyword** → `search_products`
+- **Browse TikHub TikTok Shop product reviews** → `product_reviews`
 - **Validate a market across sources** → use `search_videos` for content demand, then [`amazon.search_products`](../apimux-amazon/SKILL.md) for supply-side checks
 
 ## Available capabilities
@@ -37,6 +37,13 @@ Search TikTok content and inspect TikTok Shop product data. Use this for content
 | `shop_product_info` | Get product details | Product research and cross-platform comparison |
 | `search_products` | Search shop products by keyword | Keyword-level shop discovery and trend scouting |
 | `product_reviews` | List product reviews | Product sentiment, rating distribution, UGC mining |
+
+## Common workflows
+
+- Unknown product ID: use `search_products` first, pick a `product_id`, then call `shop_product_info` or `product_reviews`.
+- Product validation: use `search_products` to compare visible demand signals such as sold count, price, rating, and review count; use `product_reviews` to inspect buyer language and objections.
+- Review mining: use `product_reviews --sort latest` for fresh buyer feedback, `--star 1` or `--star 2` for pain points, and `--media-filter media` when the user asks for visual proof or UGC examples.
+- Cross-market checks: pass `--region` explicitly when comparing markets. Supported TikHub shop regions are `US`, `GB`, `SG`, `MY`, `PH`, `TH`, `VN`, and `ID`; `shop_products` remains seller-listing only and US-only.
 
 ---
 
@@ -264,7 +271,9 @@ apimux tiktok shop_product_info --product-id "1729384756" --region "GB"
 
 ## tiktok.search_products
 
-Search TikTok Shop products by keyword.
+Search TikHub TikTok Shop products by keyword.
+
+Use this when the user has a product category, trend term, brand, or item name but does not yet have a TikTok Shop `product_id`. This is the entry point for discovering products before fetching detail or reviews.
 
 ### Parameters
 
@@ -281,6 +290,7 @@ Search TikTok Shop products by keyword.
 ```bash
 apimux tiktok search_products --keyword "labubu"
 apimux tiktok search_products --keyword "labubu" --region "GB" --count 40
+apimux tiktok search_products --keyword "wireless microphone" --region "US" --cursor "NEXT_CURSOR"
 ```
 
 ### Response fields
@@ -297,18 +307,27 @@ apimux tiktok search_products --keyword "labubu" --region "GB" --count 40
 | `rating` | number | Product rating when available |
 | `review_count` | integer | Review count when available |
 
+### Compact output
+
+Default compact output is columnar and keeps the first 10 rows with:
+
+`product_id`, `product_name`, `product_sold_count`, `format_available_price`, `format_origin_price`, `discount`, `rating`, `review_count`.
+
 ### Notes
 
 - `keyword` is required.
 - `region` must be one of the 8 supported markets.
 - First-page requests send an empty `page_token` upstream; subsequent pages use `meta.cursor`.
 - Pagination state is returned in `meta.cursor` and `meta.has_more`.
+- Use `cursor` for token-based pagination when `meta.cursor` is present. Use `offset` only when the caller explicitly wants offset-based paging.
 
 ---
 
 ## tiktok.product_reviews
 
-List reviews for one TikTok Shop product.
+List TikHub reviews for one TikTok Shop product.
+
+Use this after obtaining a `product_id` from `search_products`, `shop_products`, or `shop_product_info`. This is the best command for sentiment analysis, purchase objections, quality issues, and customer wording.
 
 ### Parameters
 
@@ -327,6 +346,7 @@ List reviews for one TikTok Shop product.
 ```bash
 apimux tiktok product_reviews --product-id "1729556436942358002"
 apimux tiktok product_reviews --product-id "1729556436942358002" --sort "latest" --star "5" --media-filter "media"
+apimux tiktok product_reviews --product-id "1729556436942358002" --region "GB" --page 2 --count 50
 ```
 
 ### Response fields
@@ -343,9 +363,17 @@ apimux tiktok product_reviews --product-id "1729556436942358002" --sort "latest"
 | `author` | object | `user_id`, `nickname`, `avatar` |
 | `seller_reply` | object | Seller reply payload when present |
 
+### Compact output
+
+Default compact output is columnar and keeps the first 10 rows with:
+
+`review_id`, `rating`, `verified_purchase`, `like_count`, `create_time`, `content`.
+
 ### Notes
 
 - `product_id` is required.
+- Use `star` to isolate sentiment: `1` and `2` for problems, `4` and `5` for positive language, `all` for the default mix.
+- Use `media_filter=media` when the user needs reviews with images or videos; use `media_filter=verified` when the user asks for verified purchases.
 - The underlying provider endpoint is documented for Americas and Europe (e.g.
   `US`, `GB`). For Southeast Asia regions (`SG`, `MY`, `PH`, `TH`, `VN`, `ID`)
   results may be empty.
