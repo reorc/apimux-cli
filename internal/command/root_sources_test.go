@@ -597,6 +597,70 @@ func TestTikTokGetVideoDetailCallsService(t *testing.T) {
 	}
 }
 
+func TestTikTokSearchProductsCallsService(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if maybeServeSchema(w, r) {
+			return
+		}
+		if r.URL.Path != "/v1/capabilities/tiktok.search_products" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"ok":true,"data":[{"product_id":"p-1","product_name":"Labubu Plush","product_sold_count":10,"format_available_price":"$9.99","format_origin_price":"$12.99","discount":"20% off","rating":4.6,"review_count":42}],"meta":{"capability":"tiktok.search_products","cursor":"next-page","has_more":true}}`))
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"tiktok", "search_products",
+		"--keyword", "labubu",
+		"--region", "US",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	assertCompactTableOutputContains(t, stdout.String(), `"columns":["product_id","product_name","product_sold_count","format_available_price","format_origin_price","discount","rating","review_count"]`, `"p-1"`)
+}
+
+func TestTikTokProductReviewsCallsService(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if maybeServeSchema(w, r) {
+			return
+		}
+		if r.URL.Path != "/v1/capabilities/tiktok.product_reviews" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"ok":true,"data":[{"review_id":"r-1","rating":5,"verified_purchase":true,"like_count":3,"create_time":"2023-11-14T22:13:20Z","content":"Great!"}],"meta":{"capability":"tiktok.product_reviews","has_more":true,"total":120}}`))
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"tiktok", "product_reviews",
+		"--product-id", "prod-1",
+		"--sort", "latest",
+		"--media-filter", "media",
+		"--star", "5",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	assertCompactTableOutputContains(t, stdout.String(), `"columns":["review_id","rating","verified_purchase","like_count","create_time","content"]`, `"r-1"`)
+}
+
 func TestMetaAdsSearchCallsService(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if maybeServeSchema(w, r) {

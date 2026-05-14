@@ -733,6 +733,46 @@ var projectionRules = map[string]projectionRule{
 			},
 		},
 	},
+	"tiktok.search_products": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "$root",
+					Limit: 10,
+					Columns: []fieldRule{
+						{From: "product_id", To: "product_id"},
+						{From: "product_name", To: "product_name"},
+						{From: "product_sold_count", To: "product_sold_count"},
+						{From: "format_available_price", To: "format_available_price"},
+						{From: "format_origin_price", To: "format_origin_price"},
+						{From: "discount", To: "discount"},
+						{From: "rating", To: "rating"},
+						{From: "review_count", To: "review_count"},
+					},
+				},
+			},
+		},
+	},
+	"tiktok.product_reviews": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "$root",
+					Limit: 10,
+					Columns: []fieldRule{
+						{From: "review_id", To: "review_id"},
+						{From: "rating", To: "rating"},
+						{From: "verified_purchase", To: "verified_purchase"},
+						{From: "like_count", To: "like_count"},
+						{From: "create_time", To: "create_time"},
+						{From: "content", To: "content"},
+					},
+				},
+			},
+		},
+	},
 	"xiaohongshu.get_note_comments": {
 		Compact: projectionSpec{
 			Tables: []tableRule{
