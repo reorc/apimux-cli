@@ -605,6 +605,15 @@ func TestTikTokSearchProductsCallsService(t *testing.T) {
 		if r.URL.Path != "/v1/capabilities/tiktok.search_products" {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
+		var body struct {
+			Params map[string]any `json:"params"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if body.Params["sort_type"] != float64(2) {
+			t.Fatalf("expected sort_type 2, got %#v", body.Params)
+		}
 		_, _ = w.Write([]byte(`{"ok":true,"data":[{"product_id":"p-1","product_name":"Labubu Plush","product_sold_count":10,"format_available_price":"$9.99","format_origin_price":"$12.99","discount":"20% off","rating":4.6,"review_count":42}],"meta":{"capability":"tiktok.search_products","cursor":"next-page","has_more":true}}`))
 	}))
 	defer server.Close()
@@ -618,6 +627,7 @@ func TestTikTokSearchProductsCallsService(t *testing.T) {
 		"tiktok", "search_products",
 		"--keyword", "labubu",
 		"--region", "US",
+		"--sort-type", "2",
 	})
 	if err != nil {
 		t.Fatalf("execute root: %v", err)
