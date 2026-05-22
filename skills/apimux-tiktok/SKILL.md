@@ -1,7 +1,7 @@
 ---
 name: apimux-tiktok
 version: 1.0.0
-description: "TikTok content and TikHub-backed TikTok Shop data. Search videos, analyze comments, list shop products, search products, browse reviews, and inspect product details for content research and commerce analysis."
+description: "TikTok content and provider-backed TikTok Shop data. Search videos, analyze comments, list shop products, search products, browse reviews, and inspect product details for content research and commerce analysis."
 metadata:
   source: tiktok
   requires:
@@ -11,7 +11,7 @@ metadata:
 
 # TikTok
 
-Search TikTok content and inspect TikHub-backed TikTok Shop product data. Use this for content research, creator/product analysis, shopping research, and cross-platform market validation.
+Search TikTok content and inspect provider-backed TikTok Shop product data. Use this for content research, creator/product analysis, shopping research, and cross-platform market validation.
 
 **Before using:** Read [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure, error handling, pagination metadata, and CLI conventions.
 
@@ -22,8 +22,8 @@ Search TikTok content and inspect TikHub-backed TikTok Shop product data. Use th
 - **Analyze comments under a video** → `list_comments`
 - **List products from a TikTok Shop seller** → `shop_products`
 - **Inspect one TikTok Shop product** → `shop_product_info`
-- **Search TikHub TikTok Shop products by keyword** → `search_products`
-- **Browse TikHub TikTok Shop product reviews** → `product_reviews`
+- **Search TikTok Shop products by keyword** → `search_products`
+- **Browse TikTok Shop product reviews** → `product_reviews`
 - **Validate a market across sources** → use `search_videos` for content demand, then [`amazon.search_products`](../apimux-amazon/SKILL.md) for supply-side checks
 
 ## Available capabilities
@@ -43,7 +43,7 @@ Search TikTok content and inspect TikHub-backed TikTok Shop product data. Use th
 - Unknown product ID: use `search_products` first, pick a `product_id`, then call `shop_product_info` or `product_reviews`.
 - Product validation: use `search_products` to compare visible demand signals such as sold count, price, rating, and review count; use `product_reviews` to inspect buyer language and objections.
 - Review mining: use `product_reviews --sort latest` for fresh buyer feedback, `--star 1` or `--star 2` for pain points, and `--media-filter media` when the user asks for visual proof or UGC examples.
-- Cross-market checks: pass `--region` explicitly when comparing markets. Supported TikHub shop regions are `US`, `GB`, `SG`, `MY`, `PH`, `TH`, `VN`, and `ID`; `shop_products` remains seller-listing only and US-only.
+- Cross-market checks: pass `--region` explicitly when comparing markets. Supported TikTok Shop regions are `US`, `GB`, `SG`, `MY`, `PH`, `TH`, `VN`, and `ID`; `shop_products` remains seller-listing only and US-only.
 
 ---
 
@@ -271,7 +271,7 @@ apimux tiktok shop_product_info --product-id "1729384756" --region "GB"
 
 ## tiktok.search_products
 
-Search TikHub TikTok Shop products by keyword.
+Search TikTok Shop products by keyword. The service prefers YimianData for first-page offset searches and falls back to TikHub when needed.
 
 Use this when the user has a product category, trend term, brand, or item name but does not yet have a TikTok Shop `product_id`. This is the entry point for discovering products before fetching detail or reviews.
 
@@ -283,12 +283,14 @@ Use this when the user has a product category, trend term, brand, or item name b
 | `region` | string | No | `US`, `GB`, `SG`, `MY`, `PH`, `TH`, `VN`, or `ID`; default `US` |
 | `cursor` | string | No | Pagination token from previous `meta.cursor` |
 | `offset` | integer | No | Result offset, `>= 0`; default `0` |
+| `sort_type` | integer | No | `1` comprehensive, `2` sales, or `3` price; default `1` |
 | `count` | integer | No | Number of products, `1..200`; default `20` |
 
 ### CLI usage
 
 ```bash
 apimux tiktok search_products --keyword "labubu"
+apimux tiktok search_products --keyword "water" --region "ID" --sort-type 2 --offset 20
 apimux tiktok search_products --keyword "labubu" --region "GB" --count 40
 apimux tiktok search_products --keyword "wireless microphone" --region "US" --cursor "NEXT_CURSOR"
 ```
@@ -317,7 +319,8 @@ Default compact output is columnar and keeps the first 10 rows with:
 
 - `keyword` is required.
 - `region` must be one of the 8 supported markets.
-- First-page requests send an empty `page_token` upstream; subsequent pages use `meta.cursor`.
+- First-page offset searches prefer YimianData and use `offset` in steps of 20 for paging.
+- Token-based pagination with `cursor` uses the TikHub path.
 - Pagination state is returned in `meta.cursor` and `meta.has_more`.
 - Use `cursor` for token-based pagination when `meta.cursor` is present. Use `offset` only when the caller explicitly wants offset-based paging.
 
@@ -325,7 +328,7 @@ Default compact output is columnar and keeps the first 10 rows with:
 
 ## tiktok.product_reviews
 
-List TikHub reviews for one TikTok Shop product.
+List reviews for one TikTok Shop product. The service prefers YimianData for default review listing and uses TikHub when advanced review filters are requested or fallback is needed.
 
 Use this after obtaining a `product_id` from `search_products`, `shop_products`, or `shop_product_info`. This is the best command for sentiment analysis, purchase objections, quality issues, and customer wording.
 
