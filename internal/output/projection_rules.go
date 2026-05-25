@@ -88,6 +88,49 @@ var projectionRules = map[string]projectionRule{
 			},
 		},
 	},
+	"amazon.get_product_metrics": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "items",
+					Limit: 20,
+					Columns: []fieldRule{
+						{From: "asin", To: "asin"},
+						{From: "market", To: "market"},
+						{From: "totalMetric.from", To: "from"},
+						{From: "totalMetric.to", To: "to"},
+						{From: "totalMetric.totals.totalSales.value", To: "total_sales"},
+						{From: "totalMetric.totals.totalUnitsSold.value", To: "total_units_sold"},
+						{From: "totalMetric.averages.averagePrice.value", To: "average_price"},
+						{From: "totalMetric.averages.averageRatings.value", To: "average_rating"},
+						{From: "totalMetric.averages.averageReview.value", To: "average_reviews"},
+					},
+				},
+			},
+		},
+	},
+	"amazon.get_product_search_terms": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "items",
+					Limit: 25,
+					Columns: []fieldRule{
+						{From: "searchTerm", To: "search_term"},
+						{From: "searchFrequencyRank", To: "search_frequency_rank"},
+						{From: "organicRank.rank", To: "organic_rank"},
+						{From: "paidRank", To: "paid_rank"},
+						{From: "proprietaryAsinOrganicRank", To: "proprietary_organic_rank"},
+						{From: "organicRankDelta", To: "organic_rank_delta"},
+						{From: "sales", To: "sales"},
+						{From: "adSpend", To: "ad_spend"},
+					},
+				},
+			},
+		},
+	},
 	"amazon.get_product_reviews": {
 		Compact: projectionSpec{
 			Tables: []tableRule{

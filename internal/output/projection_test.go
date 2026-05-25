@@ -785,6 +785,8 @@ func TestProjectCapabilityAutoFallsBackToDataWhenUnsupported(t *testing.T) {
 func TestProjectionRulesCoverAllAgentTestCapabilities(t *testing.T) {
 	required := []string{
 		"amazon.get_product",
+		"amazon.get_product_metrics",
+		"amazon.get_product_search_terms",
 		"amazon.get_keyword_overview",
 		"amazon.get_asins_sales_history",
 		"douyin.search_videos",
