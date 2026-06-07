@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -80,6 +81,7 @@ func (c *Client) ExecuteCapability(ctx context.Context, capability string, param
 	if c.apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	}
+	applyCallerContextHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -99,6 +101,49 @@ func (c *Client) ExecuteCapability(ctx context.Context, capability string, param
 		StatusCode: resp.StatusCode,
 		Body:       respBody,
 	}, nil
+}
+
+// callerCtxEnvPrefix matches the apimux-side header prefix one-to-one.
+// Any environment variable starting with this is forwarded as an
+// X-Apimux-Caller-Ctx-* header to the capability request. The naming is
+// deliberately generic — apimux does not interpret the keys, the
+// configured webhook receiver decides what schema it expects.
+const callerCtxEnvPrefix = "APIMUX_CALLER_CTX_"
+
+// applyCallerContextHeaders scans the process environment for every
+// variable prefixed with APIMUX_CALLER_CTX_ and copies its value into the
+// matching X-Apimux-Caller-Ctx-* HTTP header on req. Empty / whitespace-only
+// values are dropped — apimux-service treats absent and empty header
+// values identically and persists SQL NULL on api_call_logs.caller_context
+// in either case, so emitting blanks would only pollute the wire.
+//
+// Header naming: strip the env prefix, replace '_' with '-', and let Go's
+// http.Header canonicalizer normalize the casing. apimux extracts the key
+// back out by lowercasing and swapping '-' for '_', so:
+//
+//	APIMUX_CALLER_CTX_USER_ID   -> X-Apimux-Caller-Ctx-USER-ID
+//	                            -> canonical X-Apimux-Caller-Ctx-User-Id
+//	                            -> jsonb key "user_id"
+func applyCallerContextHeaders(req *http.Request) {
+	for _, kv := range os.Environ() {
+		eq := strings.IndexByte(kv, '=')
+		if eq <= 0 {
+			continue
+		}
+		name, value := kv[:eq], kv[eq+1:]
+		if !strings.HasPrefix(name, callerCtxEnvPrefix) {
+			continue
+		}
+		v := strings.TrimSpace(value)
+		if v == "" {
+			continue
+		}
+		suffix := name[len(callerCtxEnvPrefix):]
+		if suffix == "" {
+			continue
+		}
+		req.Header.Set("X-Apimux-Caller-Ctx-"+strings.ReplaceAll(suffix, "_", "-"), v)
+	}
 }
 
 func (c *Client) ListSchemas(ctx context.Context) (Response, error) {

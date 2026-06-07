@@ -248,3 +248,166 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
+
+// TestExecuteCapabilityForwardsCallerContextEnvVarsAsHeaders pins the
+// contract with apimux-service: every APIMUX_CALLER_CTX_* env var present
+// in the process must surface as the matching X-Apimux-Caller-Ctx-* header
+// on the outbound request. apimux groups them into a single caller_context
+// jsonb on api_call_logs, so missing this transparently disables the
+// billing webhook for that call.
+func TestExecuteCapabilityForwardsCallerContextEnvVarsAsHeaders(t *testing.T) {
+	t.Setenv("APIMUX_CALLER_CTX_USER_ID", "usr_alpha")
+	t.Setenv("APIMUX_CALLER_CTX_WORKSPACE_ID", "ws_beta")
+	t.Setenv("APIMUX_CALLER_CTX_CONVERSATION_ID", "conv_gamma")
+	t.Setenv("APIMUX_CALLER_CTX_MESSAGE_ID", "msg_delta")
+
+	var got http.Header
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Clone()
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer server.Close()
+
+	client := NewWithHTTPClient(Config{BaseURL: server.URL, APIKey: "k"}, server.Client())
+	if _, err := client.ExecuteCapability(context.Background(), "reddit.search", nil); err != nil {
+		t.Fatalf("ExecuteCapability error = %v", err)
+	}
+
+	want := map[string]string{
+		"X-Apimux-Caller-Ctx-User-Id":         "usr_alpha",
+		"X-Apimux-Caller-Ctx-Workspace-Id":    "ws_beta",
+		"X-Apimux-Caller-Ctx-Conversation-Id": "conv_gamma",
+		"X-Apimux-Caller-Ctx-Message-Id":      "msg_delta",
+	}
+	for header, expected := range want {
+		if got.Get(header) != expected {
+			t.Errorf("header %s = %q, want %q", header, got.Get(header), expected)
+		}
+	}
+}
+
+// TestExecuteCapabilityOmitsCallerContextHeadersWhenEnvUnset is the
+// symmetric guarantee: a fresh process without any APIMUX_CALLER_CTX_* env
+// vars must NOT attach the headers. apimux-service treats absent and empty
+// equivalently, but emitting a blank header would still leak the key name
+// into access logs / curl traces.
+func TestExecuteCapabilityOmitsCallerContextHeadersWhenEnvUnset(t *testing.T) {
+	t.Setenv("APIMUX_CALLER_CTX_USER_ID", "")
+	t.Setenv("APIMUX_CALLER_CTX_WORKSPACE_ID", "")
+	t.Setenv("APIMUX_CALLER_CTX_CONVERSATION_ID", "")
+	t.Setenv("APIMUX_CALLER_CTX_MESSAGE_ID", "")
+
+	var got http.Header
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Clone()
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer server.Close()
+
+	client := NewWithHTTPClient(Config{BaseURL: server.URL, APIKey: "k"}, server.Client())
+	if _, err := client.ExecuteCapability(context.Background(), "reddit.search", nil); err != nil {
+		t.Fatalf("ExecuteCapability error = %v", err)
+	}
+
+	for _, h := range []string{
+		"X-Apimux-Caller-Ctx-User-Id",
+		"X-Apimux-Caller-Ctx-Workspace-Id",
+		"X-Apimux-Caller-Ctx-Conversation-Id",
+		"X-Apimux-Caller-Ctx-Message-Id",
+	} {
+		if v, ok := got[http.CanonicalHeaderKey(h)]; ok {
+			t.Errorf("expected %s absent when env unset, got %v", h, v)
+		}
+	}
+}
+
+// TestExecuteCapabilityForwardsPartialCallerContext covers the realistic
+// case where the caller only knows a user id (e.g. ad-hoc CLI invocation
+// outside a conversation). The available headers MUST flow; the missing
+// ones MUST NOT be padded with empty values.
+func TestExecuteCapabilityForwardsPartialCallerContext(t *testing.T) {
+	t.Setenv("APIMUX_CALLER_CTX_USER_ID", "usr_alpha")
+	t.Setenv("APIMUX_CALLER_CTX_WORKSPACE_ID", "")
+	t.Setenv("APIMUX_CALLER_CTX_CONVERSATION_ID", "conv_gamma")
+	t.Setenv("APIMUX_CALLER_CTX_MESSAGE_ID", "")
+
+	var got http.Header
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Clone()
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer server.Close()
+
+	client := NewWithHTTPClient(Config{BaseURL: server.URL, APIKey: "k"}, server.Client())
+	if _, err := client.ExecuteCapability(context.Background(), "reddit.search", nil); err != nil {
+		t.Fatalf("ExecuteCapability error = %v", err)
+	}
+
+	if got.Get("X-Apimux-Caller-Ctx-User-Id") != "usr_alpha" {
+		t.Errorf("user id header missing or wrong: %q", got.Get("X-Apimux-Caller-Ctx-User-Id"))
+	}
+	if got.Get("X-Apimux-Caller-Ctx-Conversation-Id") != "conv_gamma" {
+		t.Errorf("conversation id header missing or wrong: %q", got.Get("X-Apimux-Caller-Ctx-Conversation-Id"))
+	}
+	if _, ok := got[http.CanonicalHeaderKey("X-Apimux-Caller-Ctx-Workspace-Id")]; ok {
+		t.Errorf("workspace id header should be absent for empty env var")
+	}
+	if _, ok := got[http.CanonicalHeaderKey("X-Apimux-Caller-Ctx-Message-Id")]; ok {
+		t.Errorf("message id header should be absent for empty env var")
+	}
+}
+
+// TestExecuteCapabilityTrimsWhitespaceFromCallerContext guards against the
+// common deployment mistake of injecting env values with trailing newlines
+// (e.g. from `echo "$id"` rather than `printf %s`). A trimmed empty string
+// must NOT produce a header.
+func TestExecuteCapabilityTrimsWhitespaceFromCallerContext(t *testing.T) {
+	t.Setenv("APIMUX_CALLER_CTX_USER_ID", "  usr_alpha\n")
+	t.Setenv("APIMUX_CALLER_CTX_WORKSPACE_ID", "   ")
+	t.Setenv("APIMUX_CALLER_CTX_CONVERSATION_ID", "")
+	t.Setenv("APIMUX_CALLER_CTX_MESSAGE_ID", "")
+
+	var got http.Header
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Clone()
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer server.Close()
+
+	client := NewWithHTTPClient(Config{BaseURL: server.URL, APIKey: "k"}, server.Client())
+	if _, err := client.ExecuteCapability(context.Background(), "reddit.search", nil); err != nil {
+		t.Fatalf("ExecuteCapability error = %v", err)
+	}
+
+	if got.Get("X-Apimux-Caller-Ctx-User-Id") != "usr_alpha" {
+		t.Errorf("user id should be trimmed to %q, got %q", "usr_alpha", got.Get("X-Apimux-Caller-Ctx-User-Id"))
+	}
+	if _, ok := got[http.CanonicalHeaderKey("X-Apimux-Caller-Ctx-Workspace-Id")]; ok {
+		t.Errorf("whitespace-only env value must not produce a header")
+	}
+}
+
+// TestExecuteCapabilityForwardsArbitraryCallerContextKey demonstrates the
+// receiver-agnostic property: a downstream that wants to bill on a key
+// apimux has never heard of (here APIMUX_CALLER_CTX_ACCOUNT_ID) just sets
+// the env var, and the header flows. apimux persists whatever it gets;
+// nothing in this codebase needs to know about "account_id".
+func TestExecuteCapabilityForwardsArbitraryCallerContextKey(t *testing.T) {
+	t.Setenv("APIMUX_CALLER_CTX_ACCOUNT_ID", "acct_xyz")
+
+	var got http.Header
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Clone()
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer server.Close()
+
+	client := NewWithHTTPClient(Config{BaseURL: server.URL, APIKey: "k"}, server.Client())
+	if _, err := client.ExecuteCapability(context.Background(), "reddit.search", nil); err != nil {
+		t.Fatalf("ExecuteCapability error = %v", err)
+	}
+
+	if got.Get("X-Apimux-Caller-Ctx-Account-Id") != "acct_xyz" {
+		t.Errorf("arbitrary caller-ctx key not forwarded: %q", got.Get("X-Apimux-Caller-Ctx-Account-Id"))
+	}
+}
