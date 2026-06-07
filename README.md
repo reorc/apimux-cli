@@ -107,6 +107,46 @@ apimux completion fish > ~/.config/fish/completions/apimux.fish
 apimux completion powershell | Out-String | Invoke-Expression
 ```
 
+## Caller Context (for billing webhook callers)
+
+API keys that have a billing webhook configured on the apimux-service side
+need each request to carry caller-provided attribution context so the
+receiver can settle the call against the right subject. `apimux` scans the
+process environment for any variable prefixed `APIMUX_CALLER_CTX_` and
+forwards it transparently as the matching `X-Apimux-Caller-Ctx-*` HTTP
+header — the prefix convention is generic by design so apimux never has
+to know which keys a particular downstream uses.
+
+The naming rule:
+
+```
+APIMUX_CALLER_CTX_<SUFFIX>   →   X-Apimux-Caller-Ctx-<Suffix-With-Dashes>
+```
+
+For Kamay's apimux receiver, that looks like:
+
+```bash
+APIMUX_CALLER_CTX_USER_ID="usr_abc" \
+APIMUX_CALLER_CTX_WORKSPACE_ID="ws_def" \
+APIMUX_CALLER_CTX_CONVERSATION_ID="conv_xyz" \
+APIMUX_CALLER_CTX_MESSAGE_ID="msg_qrs" \
+  apimux reddit search --query "headphones"
+```
+
+A different downstream might use entirely different keys (the CLI does not
+care):
+
+```bash
+APIMUX_CALLER_CTX_ACCOUNT_ID="acct_abc" \
+APIMUX_CALLER_CTX_PROJECT_ID="proj_def" \
+  apimux reddit search --query "..."
+```
+
+Unset / empty / whitespace-only values are treated as absent — no header
+is sent and apimux-service records SQL NULL on `api_call_logs.caller_context`.
+If the apikey has no webhook configured the headers are still persisted
+for reconciliation but no webhook event is enqueued.
+
 ## Repo Layout
 
 - `cmd/apimux`: entrypoint
