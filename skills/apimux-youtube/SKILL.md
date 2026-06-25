@@ -30,14 +30,14 @@ Search and inspect public YouTube videos, channels, comments, replies, and trans
 - Brand monitoring: `search_videos --query "Pimax VR"` -> `get_video_detail` -> `get_video_comments`.
 - Creator research: `get_channel_detail --handle @PimaxOfficial` -> `get_channel_videos --handle @PimaxOfficial`.
 - Summarization: `get_video_transcript --video-id ... --format plain` before summarizing long videos.
-- Comment mining: use `get_video_comments --sort newest` for fresh feedback, then `get_comment_replies` for discussion threads.
+- Comment mining: use `get_video_comments --count 50` for audience feedback, then `get_comment_replies` for discussion threads.
 
 ## CLI examples
 
 ```bash
-apimux youtube search_videos --query "Pimax VR" --publish-time month --count 20
+apimux youtube search_videos --query "Pimax VR" --count 20
 apimux youtube get_video_detail --url "https://www.youtube.com/watch?v=VIDEO_ID"
-apimux youtube get_video_comments --video-id "VIDEO_ID" --sort newest --count 50
+apimux youtube get_video_comments --url "https://www.youtube.com/watch?v=VIDEO_ID" --count 50
 apimux youtube get_comment_replies --comment-id "COMMENT_ID" --video-id "VIDEO_ID"
 apimux youtube get_channel_detail --handle "@PimaxOfficial"
 apimux youtube get_channel_videos --handle "@PimaxOfficial" --content-type all --count 30
@@ -48,7 +48,7 @@ apimux youtube get_video_transcript --video-id "VIDEO_ID" --language en --format
 
 | Capability | Required identity | Notes |
 |------------|-------------------|-------|
-| `search_videos` | `query` | Supports optional sort, publish time, duration, region, language, cursor, and count. |
+| `search_videos` | `query` | First wave supports `query`, `cursor`, and `count`. |
 | `get_video_detail` | `video_id` or `url` | Provide exactly one identity. |
 | `get_video_comments` | `video_id` or `url` | Returns canonical comments plus pagination metadata when available. |
 | `get_comment_replies` | `comment_id` | Pass `video_id` when available to improve provider resolution. |

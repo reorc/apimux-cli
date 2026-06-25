@@ -1234,7 +1234,7 @@ func TestYouTubeSearchVideosCallsService(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			t.Fatalf("decode request body: %v", err)
 		}
-		if req.Params["query"] != "Pimax VR" || req.Params["publish_time"] != "month" || req.Params["count"] != float64(10) {
+		if req.Params["query"] != "Pimax VR" || req.Params["count"] != float64(10) {
 			t.Fatalf("unexpected params: %#v", req.Params)
 		}
 		_, _ = w.Write([]byte(`{"ok":true,"data":[],"meta":{"capability":"youtube.search_videos","cursor":"next"}}`))
@@ -1249,7 +1249,6 @@ func TestYouTubeSearchVideosCallsService(t *testing.T) {
 		"--base-url", server.URL,
 		"youtube", "search_videos",
 		"--query", "Pimax VR",
-		"--publish-time", "month",
 		"--count", "10",
 	})
 	if err != nil {
