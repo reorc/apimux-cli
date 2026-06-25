@@ -170,11 +170,13 @@ func (r *Root) newCommand(runCtx *runContext) *cobra.Command {
 		r.newDouyinCommand(runCtx),
 		r.newGoogleAdsCommand(runCtx),
 		r.newGoogleTrendsCommand(runCtx),
+		r.newInstagramCommand(runCtx),
 		r.newMetaAdsCommand(runCtx),
 		r.newRedditCommand(runCtx),
 		r.newTiktokCommand(runCtx),
 		r.newTrendCloudCommand(runCtx),
 		r.newXiaohongshuCommand(runCtx),
+		r.newYouTubeCommand(runCtx),
 	)
 
 	return rootCmd

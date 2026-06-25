@@ -1219,3 +1219,114 @@ func TestXiaohongshuGetNoteDetailCallsService(t *testing.T) {
 	}
 	assertDataOnlyOutputContains(t, stdout.String(), `"note_id":"67c1f4f1000000001a01b6d3"`)
 }
+
+func TestYouTubeSearchVideosCallsService(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if maybeServeSchema(w, r) {
+			return
+		}
+		if r.URL.Path != "/v1/capabilities/youtube.search_videos" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		var req struct {
+			Params map[string]any `json:"params"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if req.Params["query"] != "Pimax VR" || req.Params["publish_time"] != "month" || req.Params["count"] != float64(10) {
+			t.Fatalf("unexpected params: %#v", req.Params)
+		}
+		_, _ = w.Write([]byte(`{"ok":true,"data":[],"meta":{"capability":"youtube.search_videos","cursor":"next"}}`))
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"youtube", "search_videos",
+		"--query", "Pimax VR",
+		"--publish-time", "month",
+		"--count", "10",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	assertDataOnlyOutputContains(t, stdout.String(), `"data":[]`)
+}
+
+func TestInstagramPostCommentsCallsService(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if maybeServeSchema(w, r) {
+			return
+		}
+		if r.URL.Path != "/v1/capabilities/instagram.get_post_comments" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		var req struct {
+			Params map[string]any `json:"params"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if req.Params["url"] != "https://www.instagram.com/p/CODE/" || req.Params["count"] != float64(20) {
+			t.Fatalf("unexpected params: %#v", req.Params)
+		}
+		_, _ = w.Write([]byte(`{"ok":true,"data":[{"comment_id":"c1","text":"nice"}],"meta":{"capability":"instagram.get_post_comments"}}`))
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"instagram", "get_post_comments",
+		"--url", "https://www.instagram.com/p/CODE/",
+		"--count", "20",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
+	}
+	assertDataOnlyOutputContains(t, stdout.String(), `"comment_id":"c1"`)
+}
+
+func TestInstagramSearchUsersHelpPrintsSchemaFlags(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if maybeServeSchema(w, r) {
+			return
+		}
+		t.Fatalf("unexpected request path: %s", r.URL.Path)
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	root := NewRoot(&stdout, &stderr)
+	exitCode, err := root.Execute(context.Background(), []string{
+		"--base-url", server.URL,
+		"instagram", "search_users",
+		"--help",
+	})
+	if err != nil {
+		t.Fatalf("execute root: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d, stderr=%s, stdout=%s", exitCode, stderr.String(), stdout.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Search Instagram users") || !strings.Contains(output, "--query string") || !strings.Contains(output, "--count int") {
+		t.Fatalf("expected instagram search_users help with schema flags, got %s", output)
+	}
+}
