@@ -1237,7 +1237,7 @@ func TestYouTubeSearchVideosCallsService(t *testing.T) {
 		if req.Params["query"] != "Pimax VR" || req.Params["count"] != float64(10) {
 			t.Fatalf("unexpected params: %#v", req.Params)
 		}
-		_, _ = w.Write([]byte(`{"ok":true,"data":[],"meta":{"capability":"youtube.search_videos","cursor":"next"}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":[{"video_id":"v1","title":"Pimax review","description":"useful headset overview","url":"https://youtube.com/watch?v=v1","thumbnail":"https://i.ytimg.com/vi/v1/hqdefault.jpg","channel":{"channel_id":"ch1","handle":"@pimax","title":"Pimax","subscriber_count":12345,"is_verified":true}}],"meta":{"capability":"youtube.search_videos","cursor":"next"}}`))
 	}))
 	defer server.Close()
 
@@ -1257,7 +1257,11 @@ func TestYouTubeSearchVideosCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	assertCompactTableOutputContains(t, stdout.String(), `"columns":["video_id","title","published_time","duration","view_count","like_count","comment_count","channel_id","channel"]`, `"rows":[]`)
+	got := stdout.String()
+	assertCompactTableOutputContains(t, got, `"columns":["video_id","title","description","published_time","duration","view_count","like_count","comment_count","channel_id","channel_handle","channel_title","channel_subscriber_count","channel_is_verified"]`, `"useful headset overview"`)
+	if strings.Contains(got, "i.ytimg.com") || strings.Contains(got, "youtube.com/watch") {
+		t.Fatalf("expected list compact output to hide YouTube URL/CDN fields, got %s", got)
+	}
 }
 
 func TestInstagramPostCommentsCallsService(t *testing.T) {
@@ -1277,7 +1281,7 @@ func TestInstagramPostCommentsCallsService(t *testing.T) {
 		if req.Params["url"] != "https://www.instagram.com/p/CODE/" || req.Params["count"] != float64(20) {
 			t.Fatalf("unexpected params: %#v", req.Params)
 		}
-		_, _ = w.Write([]byte(`{"ok":true,"data":[{"comment_id":"c1","text":"nice"}],"meta":{"capability":"instagram.get_post_comments"}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":[{"comment_id":"c1","text":"nice","author":{"user_id":"u1","username":"alice","full_name":"Alice","is_verified":true,"profile_pic_url":"https://cdn.example/avatar.jpg"}}],"meta":{"capability":"instagram.get_post_comments"}}`))
 	}))
 	defer server.Close()
 
@@ -1297,7 +1301,11 @@ func TestInstagramPostCommentsCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	assertCompactTableOutputContains(t, stdout.String(), `"columns":["comment_id","text","create_time","like_count","reply_count","author"]`, `"c1"`)
+	got := stdout.String()
+	assertCompactTableOutputContains(t, got, `"columns":["comment_id","text","create_time","like_count","reply_count","author_user_id","author_username","author_full_name","author_is_verified"]`, `"alice"`)
+	if strings.Contains(got, "cdn.example") {
+		t.Fatalf("expected comment compact output to hide author CDN fields, got %s", got)
+	}
 }
 
 func TestInstagramSearchUsersHelpPrintsSchemaFlags(t *testing.T) {

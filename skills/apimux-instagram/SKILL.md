@@ -143,16 +143,20 @@ apimux instagram search_reels --query "desk setup" --count 10
 |-------|------|-------------|
 | `media_id` | string | Instagram media ID |
 | `shortcode` | string | Shortcode |
-| `permalink` | string | Canonical Instagram URL |
 | `caption` | string | Caption text |
+| `description` | string | Description text when returned |
 | `media_type` | string | Media type |
-| `media_url` | string | Media URL |
-| `thumbnail` | string | Thumbnail URL |
 | `taken_at` | string | Timestamp or provider display value |
 | `like_count` | integer | Like count |
 | `comment_count` | integer | Comment count |
 | `view_count` | integer | View/play count |
-| `owner` | object | Canonical owner summary |
+| `owner_user_id` | string | Owner user ID |
+| `owner_username` | string | Owner username |
+| `owner_full_name` | string | Owner display name |
+| `owner_is_verified` | boolean | Whether the owner is verified |
+| `owner_is_business` | boolean | Whether the owner is a business account |
+
+Default compact list output hides long CDN/media fields such as `media_url`, `thumbnail`, `profile_pic_url`, and `permalink`. Use `--output data` when raw URLs are required.
 
 ---
 
@@ -290,7 +294,12 @@ apimux instagram get_post_comments --url "https://www.instagram.com/p/C0abc123xy
 | `create_time` | string | Timestamp or provider display value |
 | `like_count` | integer | Like count |
 | `reply_count` | integer | Reply count |
-| `author` | object | Canonical author summary |
+| `author_user_id` | string | Author user ID |
+| `author_username` | string | Author username |
+| `author_full_name` | string | Author display name |
+| `author_is_verified` | boolean | Whether the author is verified |
+
+Default compact comment output hides avatar/CDN URL fields. Use `--output data` when raw author objects or URLs are required.
 
 ---
 
@@ -320,3 +329,4 @@ apimux instagram get_comment_replies --url "https://www.instagram.com/p/C0abc123
 
 - `comment_id` is required, and the post/reel identity is also required via one of `shortcode`, `url`, or `media_id`.
 - Use `meta.cursor` and `meta.has_more` for pagination when returned.
+- Default compact reply output keeps short author identity fields and hides avatar/CDN URL fields. Use `--output data` for raw objects.

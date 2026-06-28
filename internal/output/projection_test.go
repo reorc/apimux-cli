@@ -796,7 +796,14 @@ func TestInstagramSearchReelsCompactProjectionDropsMediaURLs(t *testing.T) {
 			"like_count":10,
 			"comment_count":2,
 			"view_count":100,
-			"owner":{"username":"creator","profile_pic_url":"https://cdn.example/avatar.jpg"}
+			"owner":{
+				"user_id":"u1",
+				"username":"creator",
+				"full_name":"Creator Name",
+				"is_verified":true,
+				"is_business":false,
+				"profile_pic_url":"https://cdn.example/avatar.jpg"
+			}
 		}
 	]`)
 	body, err := projectCapability("instagram.search_reels", payload, FormatCompact)
@@ -804,8 +811,11 @@ func TestInstagramSearchReelsCompactProjectionDropsMediaURLs(t *testing.T) {
 		t.Fatalf("projectCapability() error = %v", err)
 	}
 	text := string(body)
-	if !strings.Contains(text, `"columns":["media_id","shortcode","caption","media_type","taken_at","like_count","comment_count","view_count","owner"]`) {
+	if !strings.Contains(text, `"columns":["media_id","shortcode","caption","description","media_type","taken_at","like_count","comment_count","view_count","owner_user_id","owner_username","owner_full_name","owner_is_verified","owner_is_business"]`) {
 		t.Fatalf("expected compact instagram reel columns, got %s", text)
+	}
+	if !strings.Contains(text, "desk setup") || !strings.Contains(text, "creator") || !strings.Contains(text, "Creator Name") {
+		t.Fatalf("expected compact instagram reel output to keep caption and owner decision fields, got %s", text)
 	}
 	for _, unwanted := range []string{"media_url", "thumbnail", "permalink", "cdn.example", "profile_pic_url"} {
 		if strings.Contains(text, unwanted) {
@@ -827,7 +837,14 @@ func TestYouTubeSearchVideosCompactProjectionDropsURLs(t *testing.T) {
 			"view_count":1000,
 			"like_count":10,
 			"comment_count":2,
-			"channel":{"channel_id":"c1","title":"Channel","url":"https://www.youtube.com/@channel"}
+			"channel":{
+				"channel_id":"c1",
+				"handle":"@channel",
+				"title":"Channel",
+				"subscriber_count":100000,
+				"is_verified":true,
+				"url":"https://www.youtube.com/@channel"
+			}
 		}
 	]`)
 	body, err := projectCapability("youtube.search_videos", payload, FormatCompact)
@@ -835,10 +852,13 @@ func TestYouTubeSearchVideosCompactProjectionDropsURLs(t *testing.T) {
 		t.Fatalf("projectCapability() error = %v", err)
 	}
 	text := string(body)
-	if !strings.Contains(text, `"columns":["video_id","title","published_time","duration","view_count","like_count","comment_count","channel_id","channel"]`) {
+	if !strings.Contains(text, `"columns":["video_id","title","description","published_time","duration","view_count","like_count","comment_count","channel_id","channel_handle","channel_title","channel_subscriber_count","channel_is_verified"]`) {
 		t.Fatalf("expected compact youtube video columns, got %s", text)
 	}
-	for _, unwanted := range []string{"url", "thumbnail", "description", "youtube.com", "ytimg.com"} {
+	if !strings.Contains(text, "long snippet") || !strings.Contains(text, "@channel") {
+		t.Fatalf("expected compact youtube search output to keep description and channel decision fields, got %s", text)
+	}
+	for _, unwanted := range []string{"url", "thumbnail", "youtube.com", "ytimg.com"} {
 		if strings.Contains(text, unwanted) {
 			t.Fatalf("expected compact youtube search output to drop %s, got %s", unwanted, text)
 		}

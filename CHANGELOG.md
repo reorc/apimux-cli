@@ -2,6 +2,22 @@
 
 All notable changes to APIMux CLI are documented here.
 
+## [1.1.13] - 2026-06-29
+
+### Changed
+
+- Adjusted YouTube and Instagram compact list projections for agent workflows:
+  default list output now hides long CDN/media URL fields while keeping
+  descriptions/captions and short structured creator fields for ranking and
+  drill-down decisions.
+- Kept detail-style endpoints richer by default so raw/canonical URLs remain
+  available when agents intentionally inspect one item.
+
+### Documentation
+
+- Updated bundled YouTube and Instagram skill docs to describe compact output
+  field choices and when to use `--output data` for raw URL fields.
+
 ## [1.1.5] - 2026-05-12
 
 ### Added

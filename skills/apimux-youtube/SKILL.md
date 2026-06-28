@@ -76,15 +76,19 @@ apimux youtube search_videos --query "desk setup" --cursor "<cursor>" --count 10
 |-------|------|-------------|
 | `video_id` | string | YouTube video ID |
 | `title` | string | Video title |
-| `url` | string | Canonical watch URL |
 | `description` | string | Video description or snippet |
 | `published_time` | string | Publish timestamp or display text |
 | `duration` | string | Duration display when available |
-| `thumbnail` | string | Thumbnail URL |
 | `view_count` | integer | View count |
 | `like_count` | integer | Like count |
 | `comment_count` | integer | Comment count |
-| `channel` | object | Canonical channel summary |
+| `channel_id` | string | Channel ID |
+| `channel_handle` | string | Channel handle |
+| `channel_title` | string | Channel title |
+| `channel_subscriber_count` | integer | Channel subscriber count when returned |
+| `channel_is_verified` | boolean | Whether the channel is verified when returned |
+
+Default compact list output hides canonical watch URLs and thumbnail/CDN URLs. Use `--output data` when raw URLs are required.
 
 ---
 
@@ -206,11 +210,19 @@ apimux youtube get_channel_videos --handle "mkbhd" --content-type "shorts" --cou
 |-------|------|-------------|
 | `video_id` | string | YouTube video ID |
 | `title` | string | Video title |
-| `url` | string | Canonical watch URL |
+| `description` | string | Video description or snippet |
 | `published_time` | string | Publish timestamp or display text |
 | `duration` | string | Duration display when available |
-| `thumbnail` | string | Thumbnail URL |
 | `view_count` | integer | View count |
+| `like_count` | integer | Like count |
+| `comment_count` | integer | Comment count |
+| `channel_id` | string | Channel ID |
+| `channel_handle` | string | Channel handle |
+| `channel_title` | string | Channel title |
+| `channel_subscriber_count` | integer | Channel subscriber count when returned |
+| `channel_is_verified` | boolean | Whether the channel is verified when returned |
+
+Default compact list output hides canonical watch URLs and thumbnail/CDN URLs. Use `--output data` when raw URLs are required.
 
 ---
 
@@ -243,7 +255,11 @@ apimux youtube get_video_comments --url "https://www.youtube.com/watch?v=dQw4w9W
 | `create_time` | string | RFC3339 timestamp or provider display text |
 | `like_count` | integer | Like count |
 | `reply_count` | integer | Reply count |
-| `author` | object | Canonical author summary |
+| `author_channel_id` | string | Author channel ID |
+| `author_handle` | string | Author handle |
+| `author_name` | string | Author display name |
+
+Default compact comment output hides author avatar/channel URL fields. Use `--output data` when raw author objects or URLs are required.
 
 ---
 
@@ -271,3 +287,4 @@ apimux youtube get_comment_replies --video-id "dQw4w9WgXcQ" --comment-id "Ug..."
 
 - `comment_id` is required.
 - Use `meta.cursor` and `meta.has_more` for pagination when returned.
+- Default compact reply output keeps short author identity fields and hides author avatar/channel URL fields. Use `--output data` for raw objects.
