@@ -302,6 +302,9 @@ List replies for one Instagram parent comment.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
+| `shortcode` | string | Conditional | Instagram post/reel shortcode; provide one of `shortcode`, `url`, or `media_id` |
+| `url` | string | Conditional | Instagram post/reel URL; provide one of `shortcode`, `url`, or `media_id` |
+| `media_id` | string | Conditional | Instagram media ID; provide one of `shortcode`, `url`, or `media_id` |
 | `comment_id` | string | Yes | Parent comment ID |
 | `cursor` | string | No | Pagination cursor |
 | `count` | integer | No | Maximum replies to return |
@@ -309,10 +312,11 @@ List replies for one Instagram parent comment.
 ### CLI usage
 
 ```bash
-apimux capability call instagram.get_comment_replies --params-json '{"comment_id":"18000000000000000","count":20}'
+apimux capability call instagram.get_comment_replies --params-json '{"shortcode":"C0abc123xyz","comment_id":"18000000000000000","count":20}'
+apimux capability call instagram.get_comment_replies --params-json '{"url":"https://www.instagram.com/p/C0abc123xyz/","comment_id":"18000000000000000","count":20}'
 ```
 
 ### Notes
 
-- `comment_id` is required.
+- `comment_id` is required, and the post/reel identity is also required via one of `shortcode`, `url`, or `media_id`.
 - Use `meta.cursor` and `meta.has_more` for pagination when returned.
