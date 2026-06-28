@@ -1257,7 +1257,7 @@ func TestYouTubeSearchVideosCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	assertDataOnlyOutputContains(t, stdout.String(), `"data":[]`)
+	assertCompactTableOutputContains(t, stdout.String(), `"columns":["video_id","title","published_time","duration","view_count","like_count","comment_count","channel_id","channel"]`, `"rows":[]`)
 }
 
 func TestInstagramPostCommentsCallsService(t *testing.T) {
@@ -1297,7 +1297,7 @@ func TestInstagramPostCommentsCallsService(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
-	assertDataOnlyOutputContains(t, stdout.String(), `"comment_id":"c1"`)
+	assertCompactTableOutputContains(t, stdout.String(), `"columns":["comment_id","text","create_time","like_count","reply_count","author"]`, `"c1"`)
 }
 
 func TestInstagramSearchUsersHelpPrintsSchemaFlags(t *testing.T) {

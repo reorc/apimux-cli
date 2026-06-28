@@ -495,6 +495,99 @@ var projectionRules = map[string]projectionRule{
 			},
 		},
 	},
+	"instagram.get_comment_replies": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "$root",
+					Limit: 20,
+					Columns: []fieldRule{
+						{From: "comment_id", To: "comment_id"},
+						{From: "text", To: "text"},
+						{From: "create_time", To: "create_time"},
+						{From: "like_count", To: "like_count"},
+						{From: "author.username", To: "author"},
+					},
+				},
+			},
+		},
+	},
+	"instagram.get_post_comments": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "$root",
+					Limit: 20,
+					Columns: []fieldRule{
+						{From: "comment_id", To: "comment_id"},
+						{From: "text", To: "text"},
+						{From: "create_time", To: "create_time"},
+						{From: "like_count", To: "like_count"},
+						{From: "reply_count", To: "reply_count"},
+						{From: "author.username", To: "author"},
+					},
+				},
+			},
+		},
+	},
+	"instagram.get_post_detail": {
+		Compact: projectionSpec{
+			Scalars: []fieldRule{
+				{From: "media_id", To: "media_id"},
+				{From: "shortcode", To: "shortcode"},
+				{From: "caption", To: "caption"},
+				{From: "media_type", To: "media_type"},
+				{From: "taken_at", To: "taken_at"},
+				{From: "like_count", To: "like_count"},
+				{From: "comment_count", To: "comment_count"},
+				{From: "view_count", To: "view_count"},
+				{From: "owner.username", To: "owner"},
+				{From: "permalink", To: "permalink"},
+			},
+		},
+	},
+	"instagram.get_user_posts": instagramMediaListProjection(),
+	"instagram.get_user_profile": {
+		Compact: projectionSpec{
+			Scalars: []fieldRule{
+				{From: "user_id", To: "user_id"},
+				{From: "username", To: "username"},
+				{From: "full_name", To: "full_name"},
+				{From: "bio", To: "bio"},
+				{From: "category", To: "category"},
+				{From: "follower_count", To: "follower_count"},
+				{From: "following_count", To: "following_count"},
+				{From: "media_count", To: "media_count"},
+				{From: "is_business", To: "is_business"},
+				{From: "is_verified", To: "is_verified"},
+			},
+		},
+	},
+	"instagram.get_user_reels":  instagramMediaListProjection(),
+	"instagram.search_hashtags": instagramHashtagListProjection(),
+	"instagram.search_reels":    instagramMediaListProjection(),
+	"instagram.search_users": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "$root",
+					Limit: 20,
+					Columns: []fieldRule{
+						{From: "user_id", To: "user_id"},
+						{From: "username", To: "username"},
+						{From: "full_name", To: "full_name"},
+						{From: "category", To: "category"},
+						{From: "follower_count", To: "follower_count"},
+						{From: "media_count", To: "media_count"},
+						{From: "is_verified", To: "is_verified"},
+					},
+				},
+			},
+		},
+	},
 	"meta_ads.get_ad_detail": {
 		Compact: projectionSpec{
 			Scalars: []fieldRule{
@@ -773,6 +866,81 @@ var projectionRules = map[string]projectionRule{
 			},
 		},
 	},
+	"youtube.get_channel_detail": {
+		Compact: projectionSpec{
+			Scalars: []fieldRule{
+				{From: "channel_id", To: "channel_id"},
+				{From: "title", To: "title"},
+				{From: "handle", To: "handle"},
+				{From: "description", To: "description"},
+				{From: "subscriber_count", To: "subscriber_count"},
+				{From: "video_count", To: "video_count"},
+				{From: "view_count", To: "view_count"},
+				{From: "url", To: "url"},
+			},
+		},
+	},
+	"youtube.get_channel_videos": youtubeVideoListProjection(),
+	"youtube.get_comment_replies": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "$root",
+					Limit: 20,
+					Columns: []fieldRule{
+						{From: "comment_id", To: "comment_id"},
+						{From: "text", To: "text"},
+						{From: "create_time", To: "create_time"},
+						{From: "like_count", To: "like_count"},
+						{From: "author.name", To: "author"},
+					},
+				},
+			},
+		},
+	},
+	"youtube.get_video_comments": {
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "$root",
+					Limit: 20,
+					Columns: []fieldRule{
+						{From: "comment_id", To: "comment_id"},
+						{From: "text", To: "text"},
+						{From: "create_time", To: "create_time"},
+						{From: "like_count", To: "like_count"},
+						{From: "reply_count", To: "reply_count"},
+						{From: "author.name", To: "author"},
+					},
+				},
+			},
+		},
+	},
+	"youtube.get_video_detail": {
+		Compact: projectionSpec{
+			Scalars: []fieldRule{
+				{From: "video_id", To: "video_id"},
+				{From: "title", To: "title"},
+				{From: "description", To: "description"},
+				{From: "published_time", To: "published_time"},
+				{From: "duration", To: "duration"},
+				{From: "view_count", To: "view_count"},
+				{From: "like_count", To: "like_count"},
+				{From: "comment_count", To: "comment_count"},
+				{From: "channel.channel_id", To: "channel_id"},
+				{From: "channel.title", To: "channel"},
+				{From: "url", To: "url"},
+			},
+		},
+	},
+	"youtube.get_video_transcript": {
+		Compact: projectionSpec{
+			PassThrough: true,
+		},
+	},
+	"youtube.search_videos": youtubeVideoListProjection(),
 	"xiaohongshu.get_note_comments": {
 		Compact: projectionSpec{
 			Tables: []tableRule{
@@ -823,6 +991,50 @@ var projectionRules = map[string]projectionRule{
 	},
 }
 
+func instagramHashtagListProjection() projectionRule {
+	return projectionRule{
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "$root",
+					Limit: 20,
+					Columns: []fieldRule{
+						{From: "hashtag_id", To: "hashtag_id"},
+						{From: "name", To: "name"},
+						{From: "media_count", To: "media_count"},
+					},
+				},
+			},
+		},
+	}
+}
+
+func instagramMediaListProjection() projectionRule {
+	return projectionRule{
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "$root",
+					Limit: 10,
+					Columns: []fieldRule{
+						{From: "media_id", To: "media_id"},
+						{From: "shortcode", To: "shortcode"},
+						{From: "caption", To: "caption"},
+						{From: "media_type", To: "media_type"},
+						{From: "taken_at", To: "taken_at"},
+						{From: "like_count", To: "like_count"},
+						{From: "comment_count", To: "comment_count"},
+						{From: "view_count", To: "view_count"},
+						{From: "owner.username", To: "owner"},
+					},
+				},
+			},
+		},
+	}
+}
+
 func videoDetailScalarFields(identityField string) []fieldRule {
 	return []fieldRule{
 		{From: "platform", To: "platform"},
@@ -840,5 +1052,30 @@ func videoDetailScalarFields(identityField string) []fieldRule {
 		{From: "statistics", To: "statistics"},
 		{From: "video", To: "video"},
 		{From: "music", To: "music"},
+	}
+}
+
+func youtubeVideoListProjection() projectionRule {
+	return projectionRule{
+		Compact: projectionSpec{
+			Tables: []tableRule{
+				{
+					From:  "$root",
+					To:    "$root",
+					Limit: 10,
+					Columns: []fieldRule{
+						{From: "video_id", To: "video_id"},
+						{From: "title", To: "title"},
+						{From: "published_time", To: "published_time"},
+						{From: "duration", To: "duration"},
+						{From: "view_count", To: "view_count"},
+						{From: "like_count", To: "like_count"},
+						{From: "comment_count", To: "comment_count"},
+						{From: "channel.channel_id", To: "channel_id"},
+						{From: "channel.title", To: "channel"},
+					},
+				},
+			},
+		},
 	}
 }
