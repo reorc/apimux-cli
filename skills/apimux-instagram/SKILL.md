@@ -5,7 +5,7 @@ metadata:
   source: instagram
   requires:
     bins: ["apimux"]
-  cliHelp: "apimux schema capabilities | grep instagram"
+  cliHelp: "apimux instagram --help"
 ---
 
 # Instagram
@@ -14,10 +14,10 @@ Search and inspect public Instagram users, hashtags, reels, profiles, posts, com
 
 **Before using:** Read [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure, error handling, pagination metadata, and CLI conventions.
 
-**CLI note:** Current `apimux-cli` does not expose `apimux instagram ...` source subcommands yet. Use the generic capability runner:
+**CLI note:** Use the Instagram source subcommands for normal workflows:
 
 ```bash
-apimux capability call instagram.search_reels --params-json '{"query":"desk setup","count":10}'
+apimux instagram search_reels --query "desk setup" --count 10
 ```
 
 ## What you can do
@@ -70,8 +70,8 @@ Search public Instagram users by keyword.
 ### CLI usage
 
 ```bash
-apimux capability call instagram.search_users --params-json '{"query":"desk setup","count":10}'
-apimux capability call instagram.search_users --params-json '{"query":"desk setup","cursor":"<cursor>","count":10}'
+apimux instagram search_users --query "desk setup" --count 10
+apimux instagram search_users --query "desk setup" --cursor "<cursor>" --count 10
 ```
 
 ### Response fields
@@ -106,7 +106,7 @@ Search Instagram hashtags by keyword.
 ### CLI usage
 
 ```bash
-apimux capability call instagram.search_hashtags --params-json '{"query":"desksetup"}'
+apimux instagram search_hashtags --query "desksetup"
 ```
 
 ### Response fields
@@ -134,7 +134,7 @@ Search public Instagram reels by keyword.
 ### CLI usage
 
 ```bash
-apimux capability call instagram.search_reels --params-json '{"query":"desk setup","count":10}'
+apimux instagram search_reels --query "desk setup" --count 10
 ```
 
 ### Response fields
@@ -170,8 +170,8 @@ Fetch one public Instagram profile by username or user ID.
 ### CLI usage
 
 ```bash
-apimux capability call instagram.get_user_profile --params-json '{"username":"natgeo"}'
-apimux capability call instagram.get_user_profile --params-json '{"user_id":"123456789"}'
+apimux instagram get_user_profile --username "natgeo"
+apimux instagram get_user_profile --user-id "123456789"
 ```
 
 ### Notes
@@ -197,8 +197,8 @@ List public posts for one Instagram user.
 ### CLI usage
 
 ```bash
-apimux capability call instagram.get_user_posts --params-json '{"username":"natgeo","count":12}'
-apimux capability call instagram.get_user_posts --params-json '{"user_id":"123456789","count":12}'
+apimux instagram get_user_posts --username "natgeo" --count 12
+apimux instagram get_user_posts --user-id "123456789" --count 12
 ```
 
 ### Notes
@@ -224,7 +224,7 @@ List public reels for one Instagram user.
 ### CLI usage
 
 ```bash
-apimux capability call instagram.get_user_reels --params-json '{"username":"natgeo","count":12}'
+apimux instagram get_user_reels --username "natgeo" --count 12
 ```
 
 ### Notes
@@ -249,8 +249,8 @@ Fetch one public Instagram post or reel by shortcode, media ID, or URL.
 ### CLI usage
 
 ```bash
-apimux capability call instagram.get_post_detail --params-json '{"shortcode":"C0abc123xyz"}'
-apimux capability call instagram.get_post_detail --params-json '{"url":"https://www.instagram.com/p/C0abc123xyz/"}'
+apimux instagram get_post_detail --shortcode "C0abc123xyz"
+apimux instagram get_post_detail --url "https://www.instagram.com/p/C0abc123xyz/"
 ```
 
 ### Notes
@@ -277,8 +277,8 @@ List comments for one public Instagram post or reel.
 ### CLI usage
 
 ```bash
-apimux capability call instagram.get_post_comments --params-json '{"shortcode":"C0abc123xyz","count":20}'
-apimux capability call instagram.get_post_comments --params-json '{"url":"https://www.instagram.com/p/C0abc123xyz/","count":20}'
+apimux instagram get_post_comments --shortcode "C0abc123xyz" --count 20
+apimux instagram get_post_comments --url "https://www.instagram.com/p/C0abc123xyz/" --count 20
 ```
 
 ### Response fields
@@ -312,8 +312,8 @@ List replies for one Instagram parent comment.
 ### CLI usage
 
 ```bash
-apimux capability call instagram.get_comment_replies --params-json '{"shortcode":"C0abc123xyz","comment_id":"18000000000000000","count":20}'
-apimux capability call instagram.get_comment_replies --params-json '{"url":"https://www.instagram.com/p/C0abc123xyz/","comment_id":"18000000000000000","count":20}'
+apimux instagram get_comment_replies --shortcode "C0abc123xyz" --comment-id "18000000000000000" --count 20
+apimux instagram get_comment_replies --url "https://www.instagram.com/p/C0abc123xyz/" --comment-id "18000000000000000" --count 20
 ```
 
 ### Notes

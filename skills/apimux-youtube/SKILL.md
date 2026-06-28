@@ -5,7 +5,7 @@ metadata:
   source: youtube
   requires:
     bins: ["apimux"]
-  cliHelp: "apimux schema capabilities | grep youtube"
+  cliHelp: "apimux youtube --help"
 ---
 
 # YouTube
@@ -14,10 +14,10 @@ Search and inspect public YouTube videos, channels, transcripts, comments, and c
 
 **Before using:** Read [`../apimux-shared/SKILL.md`](../apimux-shared/SKILL.md) for response structure, error handling, pagination metadata, and CLI conventions.
 
-**CLI note:** Current `apimux-cli` does not expose `apimux youtube ...` source subcommands yet. Use the generic capability runner:
+**CLI note:** Use the YouTube source subcommands for normal workflows:
 
 ```bash
-apimux capability call youtube.search_videos --params-json '{"query":"standing desk","count":10}'
+apimux youtube search_videos --query "standing desk" --count 10
 ```
 
 ## What you can do
@@ -66,8 +66,8 @@ Search public YouTube videos by query.
 ### CLI usage
 
 ```bash
-apimux capability call youtube.search_videos --params-json '{"query":"desk setup","count":10}'
-apimux capability call youtube.search_videos --params-json '{"query":"desk setup","cursor":"<cursor>","count":10}'
+apimux youtube search_videos --query "desk setup" --count 10
+apimux youtube search_videos --query "desk setup" --cursor "<cursor>" --count 10
 ```
 
 ### Response fields
@@ -102,8 +102,8 @@ Fetch one public YouTube video detail by `video_id` or URL.
 ### CLI usage
 
 ```bash
-apimux capability call youtube.get_video_detail --params-json '{"video_id":"dQw4w9WgXcQ"}'
-apimux capability call youtube.get_video_detail --params-json '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ"}'
+apimux youtube get_video_detail --video-id "dQw4w9WgXcQ"
+apimux youtube get_video_detail --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 ```
 
 ### Notes
@@ -128,8 +128,8 @@ Fetch caption or transcript text for one public YouTube video.
 ### CLI usage
 
 ```bash
-apimux capability call youtube.get_video_transcript --params-json '{"video_id":"dQw4w9WgXcQ","format":"plain"}'
-apimux capability call youtube.get_video_transcript --params-json '{"video_id":"dQw4w9WgXcQ","language":"en","format":"segments"}'
+apimux youtube get_video_transcript --video-id "dQw4w9WgXcQ" --format "plain"
+apimux youtube get_video_transcript --video-id "dQw4w9WgXcQ" --language "en" --format "segments"
 ```
 
 ### Response fields
@@ -158,8 +158,8 @@ Fetch one YouTube channel summary by channel ID, handle, or URL.
 ### CLI usage
 
 ```bash
-apimux capability call youtube.get_channel_detail --params-json '{"handle":"mkbhd"}'
-apimux capability call youtube.get_channel_detail --params-json '{"url":"https://www.youtube.com/@mkbhd"}'
+apimux youtube get_channel_detail --handle "mkbhd"
+apimux youtube get_channel_detail --url "https://www.youtube.com/@mkbhd"
 ```
 
 ### Response fields
@@ -196,8 +196,8 @@ List videos or Shorts from one YouTube channel.
 ### CLI usage
 
 ```bash
-apimux capability call youtube.get_channel_videos --params-json '{"handle":"mkbhd","content_type":"video","count":10}'
-apimux capability call youtube.get_channel_videos --params-json '{"handle":"mkbhd","content_type":"shorts","count":10}'
+apimux youtube get_channel_videos --handle "mkbhd" --content-type "video" --count 10
+apimux youtube get_channel_videos --handle "mkbhd" --content-type "shorts" --count 10
 ```
 
 ### Response fields
@@ -230,8 +230,8 @@ List comments for one public YouTube video by `video_id` or URL.
 ### CLI usage
 
 ```bash
-apimux capability call youtube.get_video_comments --params-json '{"video_id":"dQw4w9WgXcQ","count":20}'
-apimux capability call youtube.get_video_comments --params-json '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","count":20}'
+apimux youtube get_video_comments --video-id "dQw4w9WgXcQ" --count 20
+apimux youtube get_video_comments --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ" --count 20
 ```
 
 ### Response fields
@@ -263,8 +263,8 @@ List replies for one YouTube parent comment.
 ### CLI usage
 
 ```bash
-apimux capability call youtube.get_comment_replies --params-json '{"comment_id":"Ug...","count":20}'
-apimux capability call youtube.get_comment_replies --params-json '{"video_id":"dQw4w9WgXcQ","comment_id":"Ug...","count":20}'
+apimux youtube get_comment_replies --comment-id "Ug..." --count 20
+apimux youtube get_comment_replies --video-id "dQw4w9WgXcQ" --comment-id "Ug..." --count 20
 ```
 
 ### Notes
