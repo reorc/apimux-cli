@@ -56,6 +56,8 @@ Query Amazon e-commerce data across products, keywords, reviews, and categories.
 | `get_asins_sales_history` | Monthly sales history | Batch comparison |
 | `get_variant_sales_30d` | Variant sales (30 days) | Variant structure analysis |
 | `get_product` | Product details | Competitive baseline |
+| `get_product_metrics` | Product metrics | Perpetua-backed product trend and sales metrics |
+| `get_product_search_terms` | Product search terms | Perpetua-backed ASIN search-term intelligence |
 | `search_products` | Search by keyword | Product research |
 | `get_product_reviews` | Product reviews | Review analysis |
 | `get_category_best_sellers` | Category best sellers | Category analysis |
@@ -487,6 +489,72 @@ apimux amazon get_product --asin "B0CM5JV26D" --market "US"
 - `market` is required and does not default to `US`.
 - If you do not have an ASIN, use `search_products` first.
 - For multiple ASINs, call this capability in parallel.
+
+---
+
+## amazon.get_product_metrics
+
+Get Perpetua-backed Amazon product metrics for one ASIN.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `asin` | string | Yes | Amazon product ASIN, 10 uppercase alphanumeric characters |
+| `market` | string | No | Target market; defaults to `US` |
+
+### CLI usage
+
+```bash
+apimux amazon get_product_metrics --asin "B0CM5JV26D" --market "US"
+```
+
+### Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `asin` | string | Product ASIN |
+| `market` | string | Amazon market code |
+| `totalMetric` | object | Perpetua total metric payload normalized into APIMux envelope |
+| `brandMetric` | object/null | Perpetua brand metric payload when available |
+
+### Notes
+
+- Use `--output data-pretty` when you need the complete nested metrics payload.
+- This capability is live upstream data and may intermittently fail when Perpetua is unavailable.
+
+---
+
+## amazon.get_product_search_terms
+
+Get Perpetua-backed search terms associated with one Amazon ASIN.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `asin` | string | Yes | Amazon product ASIN, 10 uppercase alphanumeric characters |
+| `market` | string | No | Target market; defaults to `US` |
+
+### CLI usage
+
+```bash
+apimux amazon get_product_search_terms --asin "B0CM5JV26D" --market "US"
+```
+
+### Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `searchTerm` | string | Search term text |
+| `searchFrequencyRank` | integer | Search frequency rank |
+| `organicRank` | object/null | Organic rank payload for the queried ASIN |
+| `paidRank` | integer/null | Paid rank when available |
+| `proprietaryAsinOrganicRank` | integer/null | Proprietary ASIN organic rank |
+| `organicRankDelta` | integer/null | Organic rank delta |
+| `sales` | number/null | Sales attributed to the term when available |
+| `adSpend` | number/null | Ad spend attributed to the term when available |
+| `perpetuaId` | string/null | Perpetua identifier when available |
 
 ---
 
