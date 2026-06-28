@@ -782,6 +782,69 @@ func TestProjectCapabilityAutoFallsBackToDataWhenUnsupported(t *testing.T) {
 	}
 }
 
+func TestInstagramSearchReelsCompactProjectionDropsMediaURLs(t *testing.T) {
+	payload := json.RawMessage(`[
+		{
+			"media_id":"m1",
+			"shortcode":"ABC123",
+			"caption":"desk setup",
+			"media_type":"video",
+			"media_url":"https://cdn.example/video.mp4",
+			"thumbnail":"https://cdn.example/thumb.jpg",
+			"permalink":"https://www.instagram.com/reel/ABC123/",
+			"taken_at":"2026-06-28T00:00:00Z",
+			"like_count":10,
+			"comment_count":2,
+			"view_count":100,
+			"owner":{"username":"creator","profile_pic_url":"https://cdn.example/avatar.jpg"}
+		}
+	]`)
+	body, err := projectCapability("instagram.search_reels", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"columns":["media_id","shortcode","caption","media_type","taken_at","like_count","comment_count","view_count","owner"]`) {
+		t.Fatalf("expected compact instagram reel columns, got %s", text)
+	}
+	for _, unwanted := range []string{"media_url", "thumbnail", "permalink", "cdn.example", "profile_pic_url"} {
+		if strings.Contains(text, unwanted) {
+			t.Fatalf("expected compact instagram reel output to drop %s, got %s", unwanted, text)
+		}
+	}
+}
+
+func TestYouTubeSearchVideosCompactProjectionDropsURLs(t *testing.T) {
+	payload := json.RawMessage(`[
+		{
+			"video_id":"v1",
+			"title":"demo",
+			"url":"https://www.youtube.com/watch?v=v1",
+			"description":"long snippet",
+			"thumbnail":"https://i.ytimg.com/vi/v1/default.jpg",
+			"published_time":"2026-06-28",
+			"duration":"1:23",
+			"view_count":1000,
+			"like_count":10,
+			"comment_count":2,
+			"channel":{"channel_id":"c1","title":"Channel","url":"https://www.youtube.com/@channel"}
+		}
+	]`)
+	body, err := projectCapability("youtube.search_videos", payload, FormatCompact)
+	if err != nil {
+		t.Fatalf("projectCapability() error = %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"columns":["video_id","title","published_time","duration","view_count","like_count","comment_count","channel_id","channel"]`) {
+		t.Fatalf("expected compact youtube video columns, got %s", text)
+	}
+	for _, unwanted := range []string{"url", "thumbnail", "description", "youtube.com", "ytimg.com"} {
+		if strings.Contains(text, unwanted) {
+			t.Fatalf("expected compact youtube search output to drop %s, got %s", unwanted, text)
+		}
+	}
+}
+
 func TestProjectionRulesCoverAllAgentTestCapabilities(t *testing.T) {
 	required := []string{
 		"amazon.get_product",
@@ -825,6 +888,22 @@ func TestProjectionRulesCoverAllAgentTestCapabilities(t *testing.T) {
 		"tiktok.product_reviews",
 		"xiaohongshu.get_note_comments",
 		"douyin.get_comment_replies",
+		"instagram.search_users",
+		"instagram.search_hashtags",
+		"instagram.search_reels",
+		"instagram.get_user_profile",
+		"instagram.get_user_posts",
+		"instagram.get_user_reels",
+		"instagram.get_post_detail",
+		"instagram.get_post_comments",
+		"instagram.get_comment_replies",
+		"youtube.search_videos",
+		"youtube.get_video_detail",
+		"youtube.get_video_comments",
+		"youtube.get_comment_replies",
+		"youtube.get_channel_detail",
+		"youtube.get_channel_videos",
+		"youtube.get_video_transcript",
 	}
 	if len(projectionRules) != len(required) {
 		t.Fatalf("projectionRules size = %d, want %d", len(projectionRules), len(required))
