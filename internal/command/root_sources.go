@@ -151,6 +151,25 @@ func (r *Root) newMetaAdsCommand(runCtx *runContext) *cobra.Command {
 	)
 }
 
+func (r *Root) newInstagramCommand(runCtx *runContext) *cobra.Command {
+	return newStaticSourceCommand(
+		"instagram",
+		"Instagram profile, media, search, and comments",
+		"Instagram profile, media, search, and comments.\n\nUse this command to search Instagram users/reels/hashtags, inspect public profiles and posts/reels, and collect comments and replies.",
+		"  apimux instagram search_users --query pimax\n  apimux instagram get_user_posts --username pimaxofficial\n  apimux instagram get_post_comments --url https://www.instagram.com/p/CODE/",
+		"search_users, search_reels, search_hashtags, get_user_profile, get_user_posts, get_user_reels, get_post_detail, get_post_comments, get_comment_replies",
+		newSchemaBoundCapabilityCommand(runCtx, "instagram.search_users", "search_users", "Search Instagram users", "instagram search_users"),
+		newSchemaBoundCapabilityCommand(runCtx, "instagram.search_reels", "search_reels", "Search Instagram reels", "instagram search_reels"),
+		newSchemaBoundCapabilityCommand(runCtx, "instagram.search_hashtags", "search_hashtags", "Search Instagram hashtags", "instagram search_hashtags"),
+		newSchemaBoundCapabilityCommand(runCtx, "instagram.get_user_profile", "get_user_profile", "Fetch one Instagram public profile", "instagram get_user_profile"),
+		newSchemaBoundCapabilityCommand(runCtx, "instagram.get_user_posts", "get_user_posts", "List Instagram user posts", "instagram get_user_posts"),
+		newSchemaBoundCapabilityCommand(runCtx, "instagram.get_user_reels", "get_user_reels", "List Instagram user reels", "instagram get_user_reels"),
+		newSchemaBoundCapabilityCommand(runCtx, "instagram.get_post_detail", "get_post_detail", "Fetch one Instagram post or reel detail", "instagram get_post_detail"),
+		newSchemaBoundCapabilityCommand(runCtx, "instagram.get_post_comments", "get_post_comments", "List Instagram post comments", "instagram get_post_comments"),
+		newSchemaBoundCapabilityCommand(runCtx, "instagram.get_comment_replies", "get_comment_replies", "List Instagram comment replies", "instagram get_comment_replies"),
+	)
+}
+
 func (r *Root) newRedditCommand(runCtx *runContext) *cobra.Command {
 	return newStaticSourceCommand(
 		"reddit",
@@ -179,6 +198,23 @@ func (r *Root) newTiktokCommand(runCtx *runContext) *cobra.Command {
 		newSchemaBoundCapabilityCommand(runCtx, "tiktok.shop_product_info", "shop_product_info", "Fetch one TikTok Shop product detail", "tiktok shop_product_info"),
 		newSchemaBoundCapabilityCommand(runCtx, "tiktok.search_products", "search_products", "Search TikTok Shop products", "tiktok search_products"),
 		newSchemaBoundCapabilityCommand(runCtx, "tiktok.product_reviews", "product_reviews", "List TikTok Shop product reviews", "tiktok product_reviews"),
+	)
+}
+
+func (r *Root) newYouTubeCommand(runCtx *runContext) *cobra.Command {
+	return newStaticSourceCommand(
+		"youtube",
+		"YouTube video, channel, comment, and transcript data",
+		"YouTube video, channel, comment, and transcript data.\n\nUse this command to search YouTube videos, inspect videos/channels, list comments and replies, and fetch captions or transcript text.",
+		"  apimux youtube search_videos --query 'Pimax VR'\n  apimux youtube get_video_comments --url https://www.youtube.com/watch?v=VIDEO_ID\n  apimux youtube get_channel_videos --handle @PimaxOfficial",
+		"search_videos, get_video_detail, get_video_comments, get_comment_replies, get_channel_detail, get_channel_videos, get_video_transcript",
+		newSchemaBoundCapabilityCommand(runCtx, "youtube.search_videos", "search_videos", "Search YouTube videos", "youtube search_videos"),
+		newSchemaBoundCapabilityCommand(runCtx, "youtube.get_video_detail", "get_video_detail", "Fetch one YouTube video detail", "youtube get_video_detail"),
+		newSchemaBoundCapabilityCommand(runCtx, "youtube.get_video_comments", "get_video_comments", "List YouTube video comments", "youtube get_video_comments"),
+		newSchemaBoundCapabilityCommand(runCtx, "youtube.get_comment_replies", "get_comment_replies", "List YouTube comment replies", "youtube get_comment_replies"),
+		newSchemaBoundCapabilityCommand(runCtx, "youtube.get_channel_detail", "get_channel_detail", "Fetch one YouTube channel detail", "youtube get_channel_detail"),
+		newSchemaBoundCapabilityCommand(runCtx, "youtube.get_channel_videos", "get_channel_videos", "List YouTube channel videos or Shorts", "youtube get_channel_videos"),
+		newSchemaBoundCapabilityCommand(runCtx, "youtube.get_video_transcript", "get_video_transcript", "Fetch YouTube captions or transcript text", "youtube get_video_transcript"),
 	)
 }
 
