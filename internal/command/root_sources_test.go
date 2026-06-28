@@ -1258,7 +1258,7 @@ func TestYouTubeSearchVideosCallsService(t *testing.T) {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
 	got := stdout.String()
-	assertCompactTableOutputContains(t, got, `"columns":["video_id","title","description","published_time","duration","view_count","like_count","comment_count","channel_id","channel_handle","channel_title","channel_subscriber_count","channel_is_verified"]`, `"useful headset overview"`)
+	assertCompactTableOutputContains(t, got, `"columns":["video_id","title","description","published_time","duration","view_count","like_count","comment_count","channel"]`, `"useful headset overview"`)
 	if strings.Contains(got, "i.ytimg.com") || strings.Contains(got, "youtube.com/watch") {
 		t.Fatalf("expected list compact output to hide YouTube URL/CDN fields, got %s", got)
 	}
@@ -1302,7 +1302,7 @@ func TestInstagramPostCommentsCallsService(t *testing.T) {
 		t.Fatalf("expected exit code 0, got %d, stderr=%s", exitCode, stderr.String())
 	}
 	got := stdout.String()
-	assertCompactTableOutputContains(t, got, `"columns":["comment_id","text","create_time","like_count","reply_count","author_user_id","author_username","author_full_name","author_is_verified"]`, `"alice"`)
+	assertCompactTableOutputContains(t, got, `"columns":["comment_id","text","create_time","like_count","reply_count","author"]`, `"alice"`)
 	if strings.Contains(got, "cdn.example") {
 		t.Fatalf("expected comment compact output to hide author CDN fields, got %s", got)
 	}

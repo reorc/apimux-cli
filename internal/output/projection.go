@@ -75,6 +75,8 @@ const (
 	transformNone           transformKind = ""
 	transformCount          transformKind = "count"
 	transformJoinDimensions transformKind = "join_dimensions"
+	transformInstagramUser  transformKind = "instagram_user"
+	transformYouTubeChannel transformKind = "youtube_channel"
 )
 
 func ParseFormat(value string) (Format, bool) {
@@ -269,9 +271,38 @@ func resolveFieldValue(payload any, rule fieldRule) (any, bool, error) {
 			}
 		}
 		return strings.Join(parts, "; "), true, nil
+	case transformInstagramUser:
+		return compactObject(value, []fieldRule{
+			{From: "user_id", To: "user_id"},
+			{From: "username", To: "username"},
+			{From: "full_name", To: "full_name"},
+			{From: "is_verified", To: "is_verified"},
+			{From: "is_business", To: "is_business"},
+		}), true, nil
+	case transformYouTubeChannel:
+		return compactObject(value, []fieldRule{
+			{From: "channel_id", To: "channel_id"},
+			{From: "handle", To: "handle"},
+			{From: "title", To: "title"},
+			{From: "name", To: "name"},
+			{From: "subscriber_count", To: "subscriber_count"},
+			{From: "is_verified", To: "is_verified"},
+		}), true, nil
 	default:
 		return nil, false, errors.New("unknown transform")
 	}
+}
+
+func compactObject(value any, fields []fieldRule) map[string]any {
+	out := map[string]any{}
+	for _, field := range fields {
+		resolved, ok, err := resolveFieldValue(value, field)
+		if err != nil || !ok {
+			continue
+		}
+		setPathValue(out, field.To, resolved)
+	}
+	return out
 }
 
 func resolvePath(payload any, path string) (any, bool, error) {
@@ -338,4 +369,3 @@ func boundedLimit(length int, limit int) int {
 func getRoot(value any) any {
 	return value
 }
-

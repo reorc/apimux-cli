@@ -811,11 +811,14 @@ func TestInstagramSearchReelsCompactProjectionDropsMediaURLs(t *testing.T) {
 		t.Fatalf("projectCapability() error = %v", err)
 	}
 	text := string(body)
-	if !strings.Contains(text, `"columns":["media_id","shortcode","caption","description","media_type","taken_at","like_count","comment_count","view_count","owner_user_id","owner_username","owner_full_name","owner_is_verified","owner_is_business"]`) {
+	if !strings.Contains(text, `"columns":["media_id","shortcode","caption","description","media_type","taken_at","like_count","comment_count","view_count","owner"]`) {
 		t.Fatalf("expected compact instagram reel columns, got %s", text)
 	}
 	if !strings.Contains(text, "desk setup") || !strings.Contains(text, "creator") || !strings.Contains(text, "Creator Name") {
 		t.Fatalf("expected compact instagram reel output to keep caption and owner decision fields, got %s", text)
+	}
+	if !strings.Contains(text, `{"full_name":"Creator Name","is_business":false,"is_verified":true,"user_id":"u1","username":"creator"}`) {
+		t.Fatalf("expected compact instagram reel output to keep owner as a nested object, got %s", text)
 	}
 	for _, unwanted := range []string{"media_url", "thumbnail", "permalink", "cdn.example", "profile_pic_url"} {
 		if strings.Contains(text, unwanted) {
@@ -852,11 +855,14 @@ func TestYouTubeSearchVideosCompactProjectionDropsURLs(t *testing.T) {
 		t.Fatalf("projectCapability() error = %v", err)
 	}
 	text := string(body)
-	if !strings.Contains(text, `"columns":["video_id","title","description","published_time","duration","view_count","like_count","comment_count","channel_id","channel_handle","channel_title","channel_subscriber_count","channel_is_verified"]`) {
+	if !strings.Contains(text, `"columns":["video_id","title","description","published_time","duration","view_count","like_count","comment_count","channel"]`) {
 		t.Fatalf("expected compact youtube video columns, got %s", text)
 	}
 	if !strings.Contains(text, "long snippet") || !strings.Contains(text, "@channel") {
 		t.Fatalf("expected compact youtube search output to keep description and channel decision fields, got %s", text)
+	}
+	if !strings.Contains(text, `{"channel_id":"c1","handle":"@channel","is_verified":true,"subscriber_count":100000,"title":"Channel"}`) {
+		t.Fatalf("expected compact youtube search output to keep channel as a nested object, got %s", text)
 	}
 	for _, unwanted := range []string{"url", "thumbnail", "youtube.com", "ytimg.com"} {
 		if strings.Contains(text, unwanted) {

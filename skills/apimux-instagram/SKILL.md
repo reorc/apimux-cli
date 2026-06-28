@@ -150,11 +150,7 @@ apimux instagram search_reels --query "desk setup" --count 10
 | `like_count` | integer | Like count |
 | `comment_count` | integer | Comment count |
 | `view_count` | integer | View/play count |
-| `owner_user_id` | string | Owner user ID |
-| `owner_username` | string | Owner username |
-| `owner_full_name` | string | Owner display name |
-| `owner_is_verified` | boolean | Whether the owner is verified |
-| `owner_is_business` | boolean | Whether the owner is a business account |
+| `owner` | object | Compact owner summary: `user_id`, `username`, `full_name`, `is_verified`, `is_business` |
 
 Default compact list output hides long CDN/media fields such as `media_url`, `thumbnail`, `profile_pic_url`, and `permalink`. Use `--output data` when raw URLs are required.
 
@@ -294,10 +290,7 @@ apimux instagram get_post_comments --url "https://www.instagram.com/p/C0abc123xy
 | `create_time` | string | Timestamp or provider display value |
 | `like_count` | integer | Like count |
 | `reply_count` | integer | Reply count |
-| `author_user_id` | string | Author user ID |
-| `author_username` | string | Author username |
-| `author_full_name` | string | Author display name |
-| `author_is_verified` | boolean | Whether the author is verified |
+| `author` | object | Compact author summary: `user_id`, `username`, `full_name`, `is_verified`, `is_business` when returned |
 
 Default compact comment output hides avatar/CDN URL fields. Use `--output data` when raw author objects or URLs are required.
 

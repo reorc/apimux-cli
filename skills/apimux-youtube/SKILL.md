@@ -82,11 +82,7 @@ apimux youtube search_videos --query "desk setup" --cursor "<cursor>" --count 10
 | `view_count` | integer | View count |
 | `like_count` | integer | Like count |
 | `comment_count` | integer | Comment count |
-| `channel_id` | string | Channel ID |
-| `channel_handle` | string | Channel handle |
-| `channel_title` | string | Channel title |
-| `channel_subscriber_count` | integer | Channel subscriber count when returned |
-| `channel_is_verified` | boolean | Whether the channel is verified when returned |
+| `channel` | object | Compact channel summary: `channel_id`, `handle`, `title`, `subscriber_count`, `is_verified` when returned |
 
 Default compact list output hides canonical watch URLs and thumbnail/CDN URLs. Use `--output data` when raw URLs are required.
 
@@ -216,11 +212,7 @@ apimux youtube get_channel_videos --handle "mkbhd" --content-type "shorts" --cou
 | `view_count` | integer | View count |
 | `like_count` | integer | Like count |
 | `comment_count` | integer | Comment count |
-| `channel_id` | string | Channel ID |
-| `channel_handle` | string | Channel handle |
-| `channel_title` | string | Channel title |
-| `channel_subscriber_count` | integer | Channel subscriber count when returned |
-| `channel_is_verified` | boolean | Whether the channel is verified when returned |
+| `channel` | object | Compact channel summary: `channel_id`, `handle`, `title`, `subscriber_count`, `is_verified` when returned |
 
 Default compact list output hides canonical watch URLs and thumbnail/CDN URLs. Use `--output data` when raw URLs are required.
 
@@ -255,9 +247,7 @@ apimux youtube get_video_comments --url "https://www.youtube.com/watch?v=dQw4w9W
 | `create_time` | string | RFC3339 timestamp or provider display text |
 | `like_count` | integer | Like count |
 | `reply_count` | integer | Reply count |
-| `author_channel_id` | string | Author channel ID |
-| `author_handle` | string | Author handle |
-| `author_name` | string | Author display name |
+| `author` | object | Compact author channel summary: `channel_id`, `handle`, `name`/`title`, `subscriber_count`, `is_verified` when returned |
 
 Default compact comment output hides author avatar/channel URL fields. Use `--output data` when raw author objects or URLs are required.
 
